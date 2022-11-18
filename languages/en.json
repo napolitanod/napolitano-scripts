@@ -1,0 +1,45 @@
+{
+  "EN": {
+    "alerts":{
+      "linking-begin": "Initiating actor item resource linking",
+      "linking-complete": "Actor item resource linking complete",
+      "logged": "A new entry has been added to the log"
+    },
+    "context": {
+      "move-combatant-to-scene": {
+        "label": "Move combatant to scene"
+      }
+    },
+    "setting": {
+      "ancestral-protectors.label": "Ancestral Protectors",
+      "armor-of-agathys.label": "Armor of Agathys",
+      "blessed-strikes.label": "Blessed Strikes",
+      "chardlyn.label": "Chardlyn Madness",
+      "colossus-slayer.label": "Colossus Slayer",
+      "condition-effects.label": "Condition Effects",
+      "green-flame-blade.label": "Green-Flame Blade",
+      "hex.label": "Hex Spell",
+      "hexblades-curse.label": "Hexblade's Curse",
+      "hide-names.label": "Hide NPC Names",
+      "hungry-jaws.label": "Hungry Jaws",
+      "intrusive-echoes.label": "Intrusive Echoes",
+      "link-items.label": "Link Items",
+      "long-rest.label": "Long Rest",
+      "log.label": "Quick Notes Journal Name",
+      "log-page.label": "Quick Notes Journal Page Name",
+      "motivational-speech.label": "Motivational Speech",
+      "nathairs-mischief.label": "Nathairs Mischief",
+      "necrotic-shroud.label": "Necrotic Shroud",
+      "pack-tactics.label": "Pack Tactics",
+      "relentless.label":"Relentless",
+      "relentless-endurance.label":"Relentless Endurance",
+      "short-rest.label": "Short Rest",
+      "taste-of-the-stones.label": "Taste of the Stones",
+      "wild-surge.label": "Wild Surge (Barbarian)",
+      "witch-bolt.label": "Witch Bolt"
+	  },
+    "log": {
+      "button-title":  "Make a note"
+    }
+  }
+}

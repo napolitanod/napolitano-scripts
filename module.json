@@ -1,0 +1,32 @@
+{
+    "author": "napolitanod",
+    "authors": [
+        {
+            "name": "napolitanod"
+        }
+    ],
+    "description": "World scripts for me.",
+    "esmodules": [
+        "scripts/index.js",
+        "scripts/napolitano-scripts.js"
+    ],
+    "languages": [
+        {
+            "lang": "en",
+            "name": "English",
+            "path": "languages/en.json"
+        }
+    ],
+    "compatibility": {
+        "minimum": "10",
+        "verified": "10",
+        "maximum": "10"
+    },
+    "name": "napolitano-scripts",
+    "socket": true,
+    "styles": [
+        "styles/napolitano-scripts.css"
+    ],
+    "title": "_Napolitano Scripts",
+    "version": "0.1.0"
+}
