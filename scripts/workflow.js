@@ -228,6 +228,10 @@ export class framework {
         }
     }
 
+    get marker(){
+        return game.settings.get(napolitano.ID, 'marker');
+    }
+
     get moveData(){
         return this.options.moveData
     }
@@ -1394,6 +1398,7 @@ export class workflow extends framework {
             case 'intrusiveEchoes': flow._intrusiveEchoes(); break;
             case 'layOnHands': flow._layOnHands(); break;
             case 'longRest': flow._longRest(); break;
+            case 'marker': flow._marker(); break;
             case 'message': flow._message(); break;
             case 'melfsAcidArrow': flow._melfsAcidArrow(); break;
             case 'moonbeam': flow._moonbeam(); break;
@@ -2177,6 +2182,23 @@ export class workflow extends framework {
         await this._hexWarriorWeapon();
         await this._powerSurge();
     } 
+
+    async _marker(){
+        await Sequencer.EffectManager.endEffects({origin: this.origin})
+        if(this.hook === 'deleteCombat') return
+        let s = new Sequence()
+        const token = this.currentCombatant
+        if(token) {
+            s = s.effect()
+                .file(this.marker)
+                .scaleToObject(game.settings.get(napolitano.ID, 'marker-scale'))
+                .origin('napolitano_token_marker')
+                .persist()
+                .attachTo(token, {bindVisibility:true})
+                .belowTokens()
+        }
+        s.play()
+    }
 
     async _magicMissile(){
         if(!this.item.name === 'Magic Missile') return
