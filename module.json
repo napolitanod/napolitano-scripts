@@ -5,6 +5,7 @@
             "name": "napolitanod"
         }
     ],
+    "changelog": "https://github.com/napolitanod/napolitano-scripts/releases",
     "description": "World scripts for me.",
     "esmodules": [
         "scripts/index.js",
@@ -22,14 +23,15 @@
         "verified": "10",
         "maximum": "10"
     },
-    "name": "napolitano-scripts",
+    "id": "napolitano-scripts",
+    "readme": "https://github.com/napolitanod/napolitano-scripts/blob/main/README.md",
     "socket": true,
     "styles": [
         "styles/napolitano-scripts.css"
     ],
     "title": "_Napolitano Scripts",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "url": "https://github.com/napolitanod/napolitano-scripts",
     "manifest": "https://raw.githubusercontent.com/napolitanod/napolitano-scripts/master/module.json",
-    "download": "https://github.com/napolitanod/napolitano-scripts/releases/download/1.0.2/module.zip"
+    "download": "https://github.com/napolitanod/napolitano-scripts/releases/download/1.0.3/module.zip"
 }
