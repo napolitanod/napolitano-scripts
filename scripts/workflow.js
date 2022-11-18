@@ -1353,6 +1353,7 @@ export class workflow extends framework {
     }
 
     static async playAsync(ruleset, data, options = {}){
+        if(data?.workflowOptions?.isOverTime) return
         const flow = new workflow(ruleset, data, options)
         flow._initialize()
         switch(ruleset){
@@ -1368,6 +1369,7 @@ export class workflow extends framework {
     }
 
     static play(ruleset, data, options = {}){
+        if(data?.workflowOptions?.isOverTime) return
         const flow = new workflow(ruleset, data, options)
         flow._initialize()
         switch(ruleset){
