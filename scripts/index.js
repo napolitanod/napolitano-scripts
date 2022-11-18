@@ -36,6 +36,27 @@ Hooks.once('init', async function() {
         type: Boolean,
 		requiresReload: true
     });
+    game.settings.register(module, "marker", {
+        name: game.i18n.localize("Turn Marker"),
+        hint: game.i18n.localize("Choose turn marker."),
+        scope: "world",
+        config: true,
+        default: '',
+        type: String,
+        filePicker: "imagevideo"
+    });
+    game.settings.register(module, "marker-scale", {
+        name: game.i18n.localize("Turn Marker Scale"),
+        scope: "world",
+        config: true,
+        default: 1.0,
+        type: Number,
+        range: {
+            min: 0.1,
+            max: 10.0,
+            step: 0.1
+        }
+    });
     for(const config of CONFIGS){
         register(config.id, config.name)
     }
@@ -371,6 +392,7 @@ Hooks.on('updateCombat', async (combat, update, time, combatId) => {
         if(game.settings.get("napolitano-scripts", "nathairs-mischief")) workflow.play('nathairsMischiefHook', combat, {hook:hook}); 
     }
     if(game.user.isGM){
+        workflow.play('marker', combat, {hook:hook}); 
         if(game.settings.get("napolitano-scripts", "chardalyn")) workflow.play('chardalyn', combat, {hook:hook}); 
         if(time.direction === 1){
             workflow.play('combatTurnUpdateEvents', combat, {hook:hook})
@@ -382,6 +404,7 @@ Hooks.on('updateCombat', async (combat, update, time, combatId) => {
 Hooks.on('deleteCombat', async(combat, options, id) => {
     const hook = "deleteCombat";
 	if(game.user.isGM){
+        workflow.play('marker', combat, {hook:hook}); 
         workflow.play('deleteCombat', combat, options, {hook:hook})
     }
 });
