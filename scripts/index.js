@@ -391,6 +391,7 @@ Hooks.on('updateCombat', async (combat, update, time, combatId) => {
         if(game.settings.get("napolitano-scripts", "witch-bolt")) workflow.play('witchBolt', combat, {hook:hook}); 
         if(game.settings.get("napolitano-scripts", "nathairs-mischief")) workflow.play('nathairsMischiefHook', combat, {hook:hook}); 
     }
+    workflow.play('pan', combat, {hook:hook}); 
     if(game.user.isGM){
         workflow.play('marker', combat, {hook:hook}); 
         if(game.settings.get("napolitano-scripts", "chardalyn")) workflow.play('chardalyn', combat, {hook:hook}); 

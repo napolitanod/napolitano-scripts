@@ -149,6 +149,11 @@ export class framework {
         return this.combat.scene.getEmbeddedDocument("Token", this.combat.current.tokenId)
     }
 
+    get currentCombatantPlaceable(){
+        if(!this.hasCombat) return
+        return canvas.tokens.get(this.combat.current.tokenId) ?? {}
+    }
+
     get damageTotal(){
         return this.data?.damageTotal ?? 0
     }
@@ -1406,6 +1411,7 @@ export class workflow extends framework {
             case 'nathairsMischiefHook': flow._nathairsMischiefHook(); break;
             case 'necroticShroud': flow._necroticShroud(); break;
             case 'packTactics': flow._packTactics(); break;
+            case 'pan': flow._pan(); break;
             case 'passWithoutTrace': return flow._passWithoutTrace(); break;
             case 'powerSurge': flow._powerSurge(); break;
             case 'relentless': flow._relentless(); break;
@@ -2292,6 +2298,13 @@ export class workflow extends framework {
                 this.message(`${this.source.token.name} gains advantage due to ${bud.name}'s proximity to ${this.firstTarget.name}`, options)
                 return this.setMidiRollAdvantage()
             }
+        }
+    }
+
+    async _pan(){
+        const token = this.currentCombatantPlaceable
+        if(game.user.isGM || this.token.isVisible){
+            canvas.animatePan({x: token?.center.x, y: token?.center.y, duration: 500});
         }
     }
 
