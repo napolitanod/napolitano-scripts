@@ -1360,6 +1360,7 @@ export class workflow extends framework {
             case 'counterspell': await flow._counterspell(); break;
             case 'cuttingWords': await flow._cuttingWords(); break;
             case 'eldritchBlast': await flow._eldritchBlast(); break;
+            case 'guidedStrike': await flow._guidedStrike(); break;
             case 'magicMissile': await flow._magicMissile(); break;
             case 'parry': await flow._parry(); break;
             case 'precisionAttack': await flow._precisionAttack(); break;
@@ -2044,6 +2045,23 @@ export class workflow extends framework {
         }).render(true);
     }
 
+    async _guidedStrike(){
+        const itm = this.getItem('Channel Divinity: Guided Strike')
+        if(!itm || !this.hasEffect(this.source.actor, 'Channel Divinity: Guided Strike') || !this.data.attackTotal) return
+        const divinity = this.getItem('Channel Divinity');
+        if(!this.getItemUsesRemaining(divinity)) return
+        const originalRollTotal = this.data.attackTotal
+        const response = await this.yesNo({ title: 'Guided Strike', prompt: `Your attack total is <span class="napolitano-label">${this.data.attackTotal}</span>. Use Guided Strike?`, owner: this.sourceData.owner, img: itm.img})
+        if(response){
+            this.generateEffect(this.source.token, {effect: NAPOLITANOCONFIG.guidedStrike.effects.pre})
+            await this.appendRoll(this.data.attackRoll, false, {sign: 1, isAttack: true, mod: 10})
+            this.message(`${this.name} uses guided strike, increasing their attack roll from ${originalRollTotal} to ${this.data.attackTotal}.`, {title: 'Guided Strike'})
+            this.appendMessageMQ(`+10 to attack roll due to Guided Strike.`)
+            this.updateItemUses(-1, divinity)
+            this.message(`Channel Divinity reduced by one on ${this.name}.`,{whisper: "GM"})
+        }
+    }
+
     async _haloOfSpores(){
         this.setItem()
         if(!this.hasItem() || this.sourceData.disposition === this.firstHitTarget.disposition || this.hasEffect(this.source.actor, 'Reaction')) return
@@ -2374,9 +2392,7 @@ export class workflow extends framework {
         const response = await this.yesNo({ title: 'Precision Attack', prompt: `Your attack total is <span class="napolitano-label">${this.data.attackTotal}</span>. Use Precision Attack?`, owner: this.sourceData.owner, img: itm.img})
         if(response){
             const sup = await this.rollSuperiorityDie()
-            this.data.attackTotal = originalRollTotal + sup.total
-            this.data.attackRoll._total = originalRollTotal + sup.total
-            this.data.attackRoll.dice.push(sup)
+            await this.appendRoll(this.data.attackRoll, sup, {sign: 1, isAttack: true})
             this.message(`${this.name} uses precision attack, increasing their attack roll from ${originalRollTotal} to ${this.data.attackTotal}.`, {title: 'Precision Attack'})
             this.appendMessageMQ(`+${sup.total} to attack roll due to Precision Attack.`)
             this.updateItemUses(-1, supItem)

@@ -386,6 +386,9 @@ export const NAPOLITANOCONFIG = {
         name: "Grease",
         killIn: {minutes: 1}
     },
+    guidedStrike: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/Cantrip/Sacred_Flame/SacredFlameSource_01_Regular_Blue_400x400.webm', scale: 1}}
+    },
     haloOfSpores: {
         name: "Halo of Spores",
         prompt: "Use your halo of spores reaction?",
@@ -685,6 +688,7 @@ export const CONFIGS = [
     {id:"echoing-mind", name:"Echoing Mind"},
     {id:"form-of-dread", name:"Form of Dread"},
     {id:"green-flame-blade", name:"Green Flame Blade"},
+    {id:"guided-strike", name:"Guided Strike"},
     {id:"hex", name:"Hex"},
     {id:"hexblades-curse", name:"Hexblade's Curse"},
     {id:"hungry-jaws", name:"Hungry Jaws"},
