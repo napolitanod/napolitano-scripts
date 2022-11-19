@@ -8,6 +8,7 @@ export const DAMAGERESISTANTTYPES = []
 export const DAMAGETYPES = []
 export const SKILLS = []
 export const SKILLSKEYS = []
+export const HOOKIDS = {}
 
 export const AURATAGS = ['NAP-MOV-OUT','NAP-MOV-ANY-0', 'NAP-MOV-ANY-10', 'NAP-MOV-ANY-15','NAP-EOT-0', 'NAP-EOT-5', 'NAP-SOT-0', 'NAP-SOT-5', 'NAP-SOT-10', 'NAP-SOT-15'];
 

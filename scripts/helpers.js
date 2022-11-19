@@ -155,6 +155,10 @@ export async function killIn(tokens, time){
     });
 }
 
+export function logIt(message, data = {}){
+    console.log(message, data)
+}
+
 export function moduleActive(module){
     return game.modules.get(module)?.active ? true : false
 }
