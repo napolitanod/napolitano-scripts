@@ -180,10 +180,14 @@ Hooks.once("midi-qol.midiReady", () => {
     });
 
     HOOKIDS['midi-qol.preAttackRollComplete'] = Hooks.on('midi-qol.preAttackRollComplete', async function(data){
-        const hook = "midi-qol.preAttackRollComplete";
+        const hook = "midi-qol.preAttackRollComplete", results = [];
         if(game.settings.get("napolitano-scripts", "precision-attack")){
-           await workflow.playAsync('precisionAttack', data, {hook: hook})
+            results.push(workflow.playAsync('precisionAttack', data, {hook: hook}))
         }
+        if(game.settings.get("napolitano-scripts", "guided-strike")){
+            results.push(workflow.playAsync('guidedStrike', data, {hook: hook}))
+        }
+        await Promise.all(results)  
         if(game.settings.get("napolitano-scripts", "cutting-words")){
            await workflow.playAsync('cuttingWords', data, {hook: hook})
         }
