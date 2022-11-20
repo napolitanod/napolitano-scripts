@@ -4,17 +4,17 @@ import {napolitanoScriptsSocket} from "./index.js";
 
 export async function addActiveEffectDerived(actorUuid, data){
     const document = await fromUuid(actorUuid)
-    const actor = document.actor ?? document
-    let newEffects = []
-    if(actor) newEffects = await actor.createEmbeddedDocuments('ActiveEffect', [data])
+    const actor = document?.actor ?? document
+    if(actor?.documentName !== 'Actor') return
+    let newEffects = await actor.createEmbeddedDocuments('ActiveEffect', [data])
     return newEffects
 }
 
 export async function addItem(actorUuid, data){
     const document = await fromUuid(actorUuid)
-    const actor = document.actor ?? document
-    let newItems = []
-    if(actor) newItems = await actor.createEmbeddedDocuments('Item', [data])
+    const actor = document?.actor ?? document
+    if(actor?.documentName !== 'Actor') return
+    let newItems = await actor.createEmbeddedDocuments('Item', [data])
     return newItems
 }
 
@@ -95,6 +95,7 @@ export function getActorOwner(document){
 
 //taken from dnd5e
 export function getSpellData(actor, item = {}) {
+    if(!item.system || !actor.system) return
     const lvl = item.system.level ?? 0;
     const consumeSpellSlot = (lvl > 0) && CONFIG.DND5E.spellUpcastModes.includes(item.system.preparation?.mode);
     let lmax = 0;
@@ -165,7 +166,8 @@ export function moduleActive(module){
 
 export async function requestSkillCheck(actorUuid, options, prompt = 'Select a skill to roll', dice = {}){
     const document = fromUuidSync(actorUuid)
-    const actor = document.actor ?? document
+    const actor = document?.actor ?? document
+    if(actor?.documentName !== 'Actor') return
     const skill = options.length > 1 ? await choose(SKILLS.filter(s => options.includes(s[0])), prompt + ' What will you roll?', `${actor.name} please choose`) : options[0]
     const result = await actor.rollSkill(skill, {fastForward: true, ...dice})
     return result
@@ -185,13 +187,15 @@ export function toTitleCase(str) {
 export async function updateActor(actorUuid, data){
     const document = await fromUuid(actorUuid)
     const actor = document.actor ?? document
-    if(actor) await actor.update(data)
+    if(actor?.documentName !== 'Actor') return
+    await actor.update(data)
 }
 
 export async function updatePrototypeToken(actorUuid, data){
     const document = await fromUuid(actorUuid)
     const actor = document.actor ?? document
-    if(actor) await actor.prototypeToken.update(data)
+    if(actor?.documentName !== 'Actor') return
+    await actor.prototypeToken.update(data)
 }
 
 export async function updateToken(tokenUuid, data){

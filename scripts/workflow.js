@@ -169,6 +169,10 @@ export class framework {
     get gridSize(){
         return this.scene.dimensions.size
     }
+    
+    get hasActor(){
+        !Object.keys(this.source.actor).length ? false : true
+    }
 
     get hasCombat(){
         return !Object.keys(this.combat).length ? false : true
@@ -362,6 +366,7 @@ export class framework {
 
     async addActiveEffectDerived({data = this.itemAddData.item, document = this.source.actor, message = ''}={}){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const res = await napolitanoScriptsSocket.executeAsGM("addActiveEffectDerived", actor.uuid, data);
         if(res.length) this.message(message ?? `${data.label} was successfully added to ${document.name}.`, {whisper: "GM", title: "Active Effect Added"})
     }
@@ -408,6 +413,7 @@ export class framework {
     
     async addItem({data = this.itemAddData.item, document = this.source.actor, updates = this.config?.updates}={}){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         this.itemAddData.newItems = await napolitanoScriptsSocket.executeAsGM("addItem", actor.uuid,  updates ? Object.assign(data, updates) : data);
         if(this.itemAddData.newItems.length) this.message(`${data.name} was successfully added to ${document.name}.`, {whisper: "GM", title: "Item Added"})
     }
@@ -549,6 +555,7 @@ export class framework {
 
     async deleteEffect(document = this.source.actor, effectName = this.config.name, origin = ''){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         actor.deleteEmbeddedDocuments("ActiveEffect", [this.getEffect(actor, effectName, origin)?.id]); 
     }
 
@@ -574,6 +581,7 @@ export class framework {
 
     async effectEndTempHP(document = this.source.actor, name = this.config.name){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         new Dialog({
             title: name,
             content: `<p>${name} ends. Remove remaining Temp HP?</p>`,
@@ -649,7 +657,8 @@ export class framework {
 
     getActorType(document = this.source.actor){
         const actor = document.actor ?? document
-        return actor.system.details.type?.value 
+        if(!this.isActor(actor)) return
+        return actor.system?.details.type?.value 
     }
 
     getCR(document = this.source.actor){
@@ -665,7 +674,7 @@ export class framework {
     }  
 
     getEffect(document = this.source.actor, effect = this.config.name, activeOnly = true){
-        return document.effects.find(e => (!activeOnly || (!e.isSuppressed && !e.disabled)) && e.label === effect) 
+        return document.effects?.find(e => (!activeOnly || (!e.isSuppressed && !e.disabled)) && e.label === effect) 
     }  
 
     getFlag(document, flag = {}) {
@@ -674,8 +683,9 @@ export class framework {
 
     //item id or name
     getItem(item = this.config.name, document = this.source.actor){
-        const actor = document.actor ? document.actor : document
-        return actor.items.find(e => e.id === item || e.name === item)
+        const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
+        return actor.items?.find(e => e.id === item || e.name === item)
     }
 
     async getItemFromCompendium(itemName = this.config?.item?.name){
@@ -706,12 +716,14 @@ export class framework {
 
     getSpellData({document = this.source.actor, item = this.config.name} = {}){
         const actor = document.actor ?? document
-        return getSpellData(actor, actor.items.find(i => i.name === item))
+        if(!this.isActor(actor)) return
+        return getSpellData(actor, actor.items?.find(i => i.name === item))
     }
 
     getSpellSlotsRemaining(level = 1, document = this.source.actor){
         const actor = document.actor ?? document
-        return actor.system.spells?.[`spell${level}`]?.value ?? 0
+        if(!this.isActor(actor)) return
+        return actor.system?.spells?.[`spell${level}`]?.value ?? 0
     }
 
     async getTableFromCompendium(){
@@ -742,15 +754,17 @@ export class framework {
         roll = await new Roll(`${Math.floor(roll.total/2)}`).evaluate({async: true})
         return roll
     }
-   
+
     hasEffect(document = this.source.actor, effect = this.config.name, origin = ''){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         return actor.effects.find(e => !e.disabled && e.label === effect && (!origin || e.origin === origin)) ? true : false
     }  
 
     hasImmunity(document = this.source.actor, immunity = this.config.name){
         const actor = document.actor ?? document
-        return actor.system.traits.ci.value.find(i=> i === immunity.toLowerCase()) ? true : false
+        if(!this.isActor(actor)) return
+        return actor.system?.traits.ci.value.find(i=> i === immunity.toLowerCase()) ? true : false
     }
 
     //item id or name
@@ -767,6 +781,7 @@ export class framework {
 
     hasOccurredOnce({document = this.source.actor, flag = this.ruleset, id = this.firstHitTarget.id}={}){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const last = this.getFlag(actor, flag)?.[`${id}`] 
         return (last.time > this.now || (last.time === this.now && last.turn >= this.combat.current.turn)) ? true : false
     }
@@ -804,6 +819,7 @@ export class framework {
 
     async setOccurredOnce({document = this.source.actor, flag = this.ruleset, id = this.firstHitTarget.id}={}){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         await this.setFlag(actor, {[flag]: {[id]: {time: this.now, turn: this.combat.current.turn}}})      
     }
 
@@ -821,12 +837,17 @@ export class framework {
         if(!this.combat || !Object.keys(this.combat).length) this.combat = game.combats.find(c => c.isActive === true)
     }
 
+    isActor(actor = {}){
+        return actor?.documentName === 'Actor' ? true : false
+    }
+
     isOwner(token = this.source.token){
         return isOwner(token)
     }
     
     isResponsive(document = this.source.actor){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         return actor.effects.find(e => !e.disabled && !INCAPACITATEDCONDITIONS.includes(e.label)) ? true : false
     } 
 
@@ -914,6 +935,7 @@ export class framework {
 
     async rollBardicInspiration({document = this.source.actor, show=true}={}){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const dice = `1${actor.system.scale.bard.inspiration}`
         const result = await new Roll(dice).evaluate({async: true})
         if(show) this.showRoll(result)
@@ -923,6 +945,7 @@ export class framework {
     async rollCheck(document = this.firstTarget, {dc = this.sourceData.spelldc, source = this.item.name, type = 'str', chatMessage = false, show = false, fastforward = true, disadvantage = false, advantage = false, flavor = ''} = {}){
         const checkName = CONFIG.DND5E.abilities[type];
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const checkRoll = await actor.rollAbilityTest(type, {flavor: flavor ?? `${checkName} DC ${dc} ${source}`, chatMessage:chatMessage, fastForward: fastforward, advantage: advantage, disadvantage: disadvantage })  
         const success = checkRoll.total >= dc ? true : false
         if(show) await this.showRoll(checkRoll)
@@ -938,6 +961,7 @@ export class framework {
     async rollSave(document = this.firstTarget, {dc = this.sourceData.spelldc, source = this.item.name, type = 'str', chatMessage = false, show = false, fastforward = true, disadvantage = false, advantage = false, flavor = ''} = {}){
         const saveName = CONFIG.DND5E.abilities[type];
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const saveRoll = await actor.rollAbilitySave(type, {flavor: flavor ?? `${saveName} DC ${dc} ${source}`, chatMessage:chatMessage, fastForward: fastforward, advantage: advantage, disadvantage: disadvantage })  
         const success = saveRoll.total >= dc ? true : false
         if(show) await this.showRoll(saveRoll)
@@ -954,6 +978,7 @@ export class framework {
 
     async rollSkill(options, prompt, document = this.source.actor){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const owner = getActorOwner(actor)
         if(owner === 'GM'){
             this.roll = await napolitanoScriptsSocket.executeAsGM( "requestSkillCheck",actor.uuid, options, prompt) 
@@ -1072,6 +1097,7 @@ export class framework {
 
     async updateActorSpellLevel(amt, lvl, document = this.source.actor){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const path = `${lvl === 'pact' ? 'pact' : 'spell' + lvl}`;
         const after = actor.system.spells[path].value + amt
         if(after > actor.system.spells[path].max || after < 0) return console.log(`Spell level update bypassed due to update being outside of the min or max threshold`)
@@ -1097,6 +1123,7 @@ export class framework {
         }
         const flag = {[`${napolitano.ID}.detectionModes.-=${trackingId}`]: null}
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const actorFlag = actor.flags[`${napolitano.ID}`]?.detectionModes?.[`${trackingId}`]
 
         if(document.documentName === 'Token') {
@@ -1111,7 +1138,6 @@ export class framework {
 
         if(actorFlag){
             const actorData = updateData(actorFlag, actor.prototypeToken.detectionModes)
-            console.log(actorData)
             if (actorData) await this._updateDetectionActor({document: actor, data: actorData, trackingId: trackingId, flag: flag})
         }
     }
@@ -1126,6 +1152,7 @@ export class framework {
 
     async _updateDetectionActor({document = this.source.actor, data={}, trackingId = '', flag = ''}={}){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const actorFlag = flag ? flag : {[`${napolitano.ID}`]: {detectionModes: {[`${trackingId}`]: {
             new: data,
             old: deepClone(actor.prototypeToken.detectionModes.find(d => d.id === data.id) ?? {})
@@ -1154,6 +1181,7 @@ export class framework {
         }
         const flag = {[`${napolitano.ID}.sight.-=${trackingId}`]: null}
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const actorFlag = actor.flags[`${napolitano.ID}`]?.sight?.[`${trackingId}`]
 
         if(document.documentName === 'Token') {
@@ -1181,6 +1209,7 @@ export class framework {
 
     async _updateSightActor({document = this.source.actor, data={}, trackingId = '', flag = ''}={}){
         const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
         const actorFlag = flag ? flag : {[`${napolitano.ID}`]: {sight: {[`${trackingId}`]: {
             new: data,
             old: JSON.parse(JSON.stringify(actor.prototypeToken.sight))
@@ -1583,7 +1612,7 @@ export class workflow extends framework {
      * Rolls d6 and on 1 does some token says and visual indicators of chardalyn possession
      */
     async _chardalyn(){
-        if(this.source.actor){
+        if(this.hasActor){
             const items = this.source.actor.items.filter(i => ['weapon', 'equipment'].includes(i.type) && i.name.search(/chardalyn/i) !== -1)
             if(items.length){
                 await this.rollDice(`${items.length}d6`)
@@ -1615,7 +1644,7 @@ export class workflow extends framework {
       }
 
     async _clearCombatantReactions(){
-        if(this.getFlag(this.source.actor, `reaction`)) await this.deleteFlag('reaction')
+        if(this.hasActor && this.getFlag(this.source.actor, `reaction`)) await this.deleteFlag('reaction')
     }
 
     async _cloakOfFlies(){
