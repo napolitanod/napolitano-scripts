@@ -336,33 +336,7 @@ game.napolitano.macros(args, 'createBonfire', options)
     }
 
     async _createEldritchCannon(){ //tested v10
-        let choices = await warpgate.dialog([
-            {
-                type:'header', 
-                label:`Eldritch Cannon Type`
-            },
-            {
-                type: 'radio', 
-                label: `Flamethrower`, 
-                options: "choice"
-            },
-            {
-                type: 'radio', 
-                label: `Force Ballista`, 
-                options: "choice"
-            },
-            {
-                type: 'radio', 
-                label: `Protector`, 
-                options: "choice"
-            }
-            ],
-            "Choose your Eldritch Cannon:",
-            "Create!");
-
-        let choiceArray = [choices[1],choices[2],choices[3]];
-        choiceArray = choiceArray.filter(Boolean);
-        let choice = choiceArray[0];
+        const choice = await this.choose(this.config.options, 'Choose Eldritch Cannon type', 'Create Eldritch Cannon');
         this.summonData.updates = {
             actor: {
                 system:{
@@ -417,6 +391,7 @@ game.napolitano.macros(args, 'createBonfire', options)
         const item = weapons.find(w => w.id === choice)
         this.contestData.source.roll = await item.rollAttack({fastForward: true})
         this.contestData.target.roll = await this.rollSkill(['ath', 'acr'], 'Choose skill to counteract the disarm attempt', this.firstTarget)
+        await wait(4000) 
         this.message(`${this.name} ${this.contestData.source.roll.total > this.contestData.target.roll.total ? 'succeeds at ' : 'fails at '} disarming their opponent`, {title: 'Disarm Attempt Result'})
     }
 
@@ -817,6 +792,7 @@ game.napolitano.macros(args, 'createBonfire', options)
         const bypass = this.hasEffect(this.firstTarget, 'Incapacitated')
         if(!bypass) await this.contest(options)
         if(bypass || this.contestData?.won){
+            await wait(2000) 
             this.addActiveEffect({effectName: "Grappled", uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid})
             this.message(`${this.firstTarget.name} is grappled!`, {title: 'Grapple Result'})
         }
@@ -1187,6 +1163,7 @@ game.napolitano.macros(args, 'createBonfire', options)
         const options = diff > 0 ? {overrides: {source: {disadvantage: true}}} : (diff < 0 ? {overrides: {source: {advantage: true}}} : {})
         await this.contest(options)
         if(this.contestData.won){
+            await wait(2000) 
             this.message(`${this.name} successfully forces their way through the hostile creature's space!`, {title: 'Overrun Result'})
         }
     }
@@ -1225,7 +1202,8 @@ game.napolitano.macros(args, 'createBonfire', options)
         if(SIZES[targetSize] - SIZES[this.sourceData.size] > 1) return this.error('You cannot shove a target that is over 1 size larger than you!')
         const bypass = this.hasEffect(this.firstTarget, 'Incapacitated')
         if(!bypass) await this.contest()
-        if(bypass || this.contestData.won){
+        if(bypass || this.contestData.won){   
+            await wait(2000) 
             if(this.ruleset === 'shoveProne') {
                 this.addActiveEffect({effectName: "Prone", uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid})
                 this.message(`${this.firstTarget.name} is knocked prone by the shove!`, {title: 'Shove Prone Result'})
@@ -1371,35 +1349,7 @@ game.napolitano.macros(args, 'createBonfire', options)
     }
 
     async _summonFey(){//tested v10
-        let choices = await warpgate.dialog([
-            {
-                type:'header', 
-                label:`Fey`
-                
-            },
-            {
-                type: 'radio', 
-                label: `Mirthful`, 
-                options: "type"
-            },
-            {
-                type: 'radio', 
-                label: `Fuming`, 
-                options: "type"
-            },
-            {
-                type: 'radio', 
-                label: `Tricksy`, 
-                options: "type"
-            }
-            ],
-            "Choose your Fey Spirit:",
-            "Call Forth!");
-
-        let array = [choices[1],choices[2],choices[3]];
-        array = array.filter(Boolean);
-        let choice = array[0];
-
+        const choice = await this.choose(this.config.options, 'Choose your Fey Spirit', 'Summon Fey');
         this.summonData.updates = {
             actor: {
                 system:{
@@ -1450,34 +1400,7 @@ game.napolitano.macros(args, 'createBonfire', options)
      * Spawns a shadow to the canvas based on 3 of select flavors
      */
     async _summonShadowSpawn(){
-        let choices = await warpgate.dialog([
-            {
-                type:'header', 
-                label:`Shadow`
-            },
-            {
-                type: 'radio', 
-                label: `Fury`, 
-                options: "shadowType"
-            },
-            {
-                type: 'radio', 
-                label: `Despair`, 
-                options: "shadowType"
-            },
-            {
-                type: 'radio', 
-                label: `Fear`, 
-                options: "shadowType"
-            }
-            ],
-            "Choose your Shadow Spirit:",
-            "Call Forth!");
-
-        let shadowArray = [choices[1],choices[2],choices[3]];
-        shadowArray = shadowArray.filter(Boolean);
-        let shadow = shadowArray[0];
-
+        const shadow = await this.choose(this.config.options, 'Choose your Shadow Spawn', 'Summon Shadow Spawn');
         this.summonData.updates = {
             actor: {
                 system:{
@@ -1600,6 +1523,7 @@ game.napolitano.macros(args, 'createBonfire', options)
         if(!this.firstTarget) return this.error('You must target a token!')
         await this.contest()
         if(this.contestData.won){
+            await wait(2000) 
             this.message(`${this.name} successfully tumbles through the hostile creatures space!`, {title: 'Tumble Result'})
         }
     }
