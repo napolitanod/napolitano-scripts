@@ -11,6 +11,8 @@ import {buildHud, setHudHelp} from "./hud.js";
 
 Hooks.once('init', async function() { 
     const module = 'napolitano-scripts';
+    
+    api.register();
 
     console.log("Napolitano Scripts | Patching rollAbilitySave")
     libWrapper.register(module, "CONFIG.Actor.documentClass.prototype.rollAbilitySave", function(wrapped, ...args) {return wrapped(...args);}, "WRAPPER");
@@ -68,7 +70,6 @@ Hooks.once('init', async function() {
     for(const config of CONFIGS){
         register(config.id, config.name)
     }
-    api.register();
  });
 
 Hooks.once('ready', async function() { 

@@ -1,5 +1,5 @@
 import {CONTESTS} from './constants.js';
-import {chat, getActorOwner, requestSkillCheck} from './helpers.js'
+import {chat, getActorOwner, requestSkillCheck, wait} from './helpers.js'
 import {napolitano} from "./napolitano-scripts.js";
 import {napolitanoScriptsSocket} from "./index.js";
 export class contest {
@@ -60,6 +60,7 @@ export class contest {
         this.requests.push(this._rollSkill(this.source))
         this.requests.push(this._rollSkill(this.target))
         await Promise.all(this.requests);
+        await wait(4000) 
         this._message(`${this.source.actor.name} rolls ${this.source.roll.total}${this.source.owner !== "GM" ? ' (' + this.source.roll.result + ')' : ''} and their contestant rolls ${this.target.roll.total}${this.target.owner !== "GM"  ? ' (' + this.target.roll.result + ')' : ''}. ${this.source.actor.name} ${this.won ? 'wins' : 'loses'} the contest!`, {title: this.title})
         napolitano.log(false,{text: `Contest complete`, this: this})
         return this
