@@ -11,6 +11,14 @@ import {buildHud, setHudHelp} from "./hud.js";
 
 Hooks.once('init', async function() { 
     const module = 'napolitano-scripts';
+
+    console.log("Napolitano Scripts | Patching rollAbilitySave")
+    libWrapper.register(module, "CONFIG.Actor.documentClass.prototype.rollAbilitySave", function(wrapped, ...args) {return wrapped(...args);}, "WRAPPER");
+    console.log("Napolitano Scripts | Patching rollAbilityTest")
+    libWrapper.register(module, "CONFIG.Actor.documentClass.prototype.rollAbilityTest", function(wrapped, ...args) {return wrapped(...args);}, "WRAPPER");
+    console.log("Napolitano Scripts | Patching rollSkill")
+    libWrapper.register(module, "CONFIG.Actor.documentClass.prototype.rollSkill", function(wrapped, ...args) {return wrapped(...args);}, "WRAPPER");
+
     function register(id, name){
         game.settings.register(module, id, { name: name, scope: "world",config: true, default: true, type: Boolean });    
     }
@@ -155,7 +163,7 @@ Hooks.once("midi-qol.midiReady", () => {
     
     HOOKIDS['midi-qol.preambleComplete'] = Hooks.on('midi-qol.preambleComplete', async function(data){
         const hook = "midi-qol.preambleComplete", results = [];
-        if(data.templateId){
+        if(data.templateId && game.settings.get("napolitano-scripts", "template-targeting")){
             workflow.play('templateTargeting', data, {hook: hook});   
         }
         switch(data.item?.name) {

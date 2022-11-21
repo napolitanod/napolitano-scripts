@@ -336,33 +336,7 @@ game.napolitano.macros(args, 'createBonfire', options)
     }
 
     async _createEldritchCannon(){ //tested v10
-        let choices = await warpgate.dialog([
-            {
-                type:'header', 
-                label:`Eldritch Cannon Type`
-            },
-            {
-                type: 'radio', 
-                label: `Flamethrower`, 
-                options: "choice"
-            },
-            {
-                type: 'radio', 
-                label: `Force Ballista`, 
-                options: "choice"
-            },
-            {
-                type: 'radio', 
-                label: `Protector`, 
-                options: "choice"
-            }
-            ],
-            "Choose your Eldritch Cannon:",
-            "Create!");
-
-        let choiceArray = [choices[1],choices[2],choices[3]];
-        choiceArray = choiceArray.filter(Boolean);
-        let choice = choiceArray[0];
+        const choice = await this.choose(this.config.options, 'Choose Eldritch Cannon type', 'Create Eldritch Cannon');
         this.summonData.updates = {
             actor: {
                 system:{
@@ -1371,35 +1345,7 @@ game.napolitano.macros(args, 'createBonfire', options)
     }
 
     async _summonFey(){//tested v10
-        let choices = await warpgate.dialog([
-            {
-                type:'header', 
-                label:`Fey`
-                
-            },
-            {
-                type: 'radio', 
-                label: `Mirthful`, 
-                options: "type"
-            },
-            {
-                type: 'radio', 
-                label: `Fuming`, 
-                options: "type"
-            },
-            {
-                type: 'radio', 
-                label: `Tricksy`, 
-                options: "type"
-            }
-            ],
-            "Choose your Fey Spirit:",
-            "Call Forth!");
-
-        let array = [choices[1],choices[2],choices[3]];
-        array = array.filter(Boolean);
-        let choice = array[0];
-
+        const choice = await this.choose(this.config.options, 'Choose your Fey Spirit', 'Summon Fey');
         this.summonData.updates = {
             actor: {
                 system:{
@@ -1450,34 +1396,7 @@ game.napolitano.macros(args, 'createBonfire', options)
      * Spawns a shadow to the canvas based on 3 of select flavors
      */
     async _summonShadowSpawn(){
-        let choices = await warpgate.dialog([
-            {
-                type:'header', 
-                label:`Shadow`
-            },
-            {
-                type: 'radio', 
-                label: `Fury`, 
-                options: "shadowType"
-            },
-            {
-                type: 'radio', 
-                label: `Despair`, 
-                options: "shadowType"
-            },
-            {
-                type: 'radio', 
-                label: `Fear`, 
-                options: "shadowType"
-            }
-            ],
-            "Choose your Shadow Spirit:",
-            "Call Forth!");
-
-        let shadowArray = [choices[1],choices[2],choices[3]];
-        shadowArray = shadowArray.filter(Boolean);
-        let shadow = shadowArray[0];
-
+        const shadow = await this.choose(this.config.options, 'Choose your Shadow Spawn', 'Summon Shadow Spawn');
         this.summonData.updates = {
             actor: {
                 system:{

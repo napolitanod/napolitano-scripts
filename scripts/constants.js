@@ -234,6 +234,7 @@ export const NAPOLITANOCONFIG = {
     createEldritchCannon: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Particles/ParticlesOutward02_03_Regular_White_400x400.webm', scale: 1.5}},
         sounds: {pre: {file: 'modules/SoundBoard-BlitzFreePack/bundledAudio/Ambience/light-hammering.ogg'}},
+        options: [`Flamethrower`, `Force Ballista`,`Protector`],
         killIn: {minutes: 60},
         name: "Eldritch Cannon"
     },
@@ -549,6 +550,7 @@ export const NAPOLITANOCONFIG = {
     summonFey: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokeRing_01_Regular_White_800x800.webm', scale: 1}},
         sounds: {pre: {file:'modules/SoundBoard-BlitzFreePack/bundledAudio/Magic/airy-movement.wav'}},
+        options: [`Mirthful`, `Fuming`,`Tricksy`],
         killIn: {minutes: 60},
         name: "Fey Spirit"
     },
@@ -564,6 +566,7 @@ export const NAPOLITANOCONFIG = {
     summonShadowspawn: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuffRing02_01_Dark_Black_400x400.webm', scale: 1.5}},
         sounds: {pre: {file:'modules/soundfxlibrary/Combat/Single/Spell%20Impact/spell-impact-2.mp3'}},
+        options: [`Fury`, `Despair`,`Fear`],
         killIn: {minutes: 60},
         name: "Shadow Spirit"
     },
@@ -674,6 +677,7 @@ const LINKDATACATEGORIES = {
 export const CONFIGS = [
     {id:"condition-effects", name:"Condition Effects"},
     {id:"dnd5e-posthooks", name:"DnD5e Post Hooks"},
+    {id:"template-targeting", name:"Template Targeting"},
     {id:"link-items", name:"Link Items to Uses"},
     {id:"long-rest", name:"Long Rest"},
     {id:"short-rest", name:"Short Rest"},
