@@ -95,19 +95,17 @@ Hooks.once('ready', async function() {
 
     HOOKIDS['dnd5e.restCompleted'] = Hooks.on('dnd5e.restCompleted', async (actor, options) => {
         const hook = "dnd5e.restCompleted";
-        if(options.longRest && game.user.isGM && game.settings.get("napolitano-scripts", "long-rest")){
+        if(options.longRest && game.settings.get("napolitano-scripts", "long-rest")){
             workflow.play('longRest', actor, {hook:hook}); 
         }
-        else if(game.user.isGM && game.settings.get("napolitano-scripts", "short-rest")){
+        else if(game.settings.get("napolitano-scripts", "short-rest")){
             workflow.play('shortRest', actor, {hook:hook}); 
         }
     }); 
 
     HOOKIDS['dnd5e.useItem'] = Hooks.on("dnd5e.useItem", async (item, options, data) => {
-        if(game.user.isGM){
-            const hook = "dnd5e.useItem";
-            if(['Counterspell', 'Dispell Magic'].includes(item.name)) workflow.play('powerSurge', {item: item}, {hook: hook})    
-        }
+        const hook = "dnd5e.useItem";
+        if(['Counterspell', 'Dispell Magic'].includes(item.name)) workflow.play('powerSurge', {item: item}, {hook: hook})    
     });
 
     HOOKIDS['napolitano.postRollAbilityTest'] = Hooks.on("napolitano.postRollAbilityTest", async (actor, roll, ability) => {
@@ -123,15 +121,6 @@ Hooks.once('ready', async function() {
             await workflow.playAsync('cuttingWords', data, {hook: hook})
          }
     });
-
-    if(game.settings.get("napolitano-scripts", "hide-names")){
-        HOOKIDS['renderImagePopout'] = Hooks.on("renderImagePopout", (app, html, data) => {
-            HideNPCNames._onRenderImagePopout(app, html, data);
-        });
-        HOOKIDS['renderCombatTracker'] = Hooks.on("renderCombatTracker", (app, html, data) => {
-            HideNPCNames._onRenderCombatTracker(app, html, data);
-        });
-    }
 
     HOOKIDS['renderTokenActionHUD'] = Hooks.on('renderTokenActionHUD', async function(hud, html, options = {}){
         const token = canvas.scene.tokens.find(t => t.id === options.actions?.tokenId)
@@ -325,6 +314,15 @@ HOOKIDS['renderChatMessage'] = Hooks.on('renderChatMessage', (message, html, dat
     if(game.settings.get("napolitano-scripts", "hide-names")) HideNPCNames._onRenderChatMessage(message, html, data);
 });
 
+if(game.settings.get("napolitano-scripts", "hide-names")){
+    HOOKIDS['renderImagePopout'] = Hooks.on("renderImagePopout", (app, html, data) => {
+        HideNPCNames._onRenderImagePopout(app, html, data);
+    });
+    HOOKIDS['renderCombatTracker'] = Hooks.on("renderCombatTracker", (app, html, data) => {
+        HideNPCNames._onRenderCombatTracker(app, html, data);
+    });
+}
+
 HOOKIDS['createToken'] = Hooks.on("createToken", async (document, options, userId) => {
     if(game.user.isGM){
         const hook = "createToken";
@@ -359,7 +357,7 @@ HOOKIDS['deleteToken'] = Hooks.on("deleteToken", async (document, options, userI
 
 HOOKIDS['updateActor'] = Hooks.on("updateActor", async (document, data, diff, userId) => {
     const hook = "updateActor"
-    if(isOwner(document)){
+    if(game.user.isGM){
         if(game.settings.get("napolitano-scripts", "relentless") && diff.oldHpVal && diff.dhp <= -10 && diff.oldHpVal + diff.dhp <= 0){
             workflow.play('relentless', document, {hook: hook});
         }               
@@ -370,39 +368,41 @@ HOOKIDS['updateActor'] = Hooks.on("updateActor", async (document, data, diff, us
 });
    
 HOOKIDS['updateItem'] = Hooks.on("updateItem", async (data, change, options, userId) => {
-    const hook = "updateItem";
-    if(game.user.isGM && game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.name)){
-        if("equipped" in change?.system){
-            workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: !change.system.equipped});
+    if(game.user.isGM){
+        const hook = "updateItem";
+        if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.name)){
+            if("equipped" in change?.system) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: !change.system.equipped});
         }
     }
 });
 
 HOOKIDS['createActiveEffect'] = Hooks.on("createActiveEffect", async (data, change, options, userId) => {
-    const hook = "createActiveEffect";
-    if(game.user.isGM && !data.isSuppressed){
-        if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.label)){
-            workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: false});
-        }
-        switch(data.label){
-            case "Cloak of Flies": workflow.play('cloakOfFlies', data, {hook: hook, activeEffectDelete: false}); break;
-            case "Spirit Guardians": workflow.play('spiritGuardians', data, {hook: hook, activeEffectDelete: false}); break;
-        }
-    } 
+    if(game.user.isGM){
+        const hook = "createActiveEffect";
+        if(!data.isSuppressed){
+            if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.label)) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: false});
+            switch(data.label){
+                case "Cloak of Flies": workflow.play('cloakOfFlies', data, {hook: hook, activeEffectDelete: false}); break;
+                case "Spirit Guardians": workflow.play('spiritGuardians', data, {hook: hook, activeEffectDelete: false}); break;
+            }
+        } 
+    }   
 });
 
 HOOKIDS['updateActiveEffect'] = Hooks.on("updateActiveEffect", async (data, change, options, userId) => {
-    const hook = "updateActiveEffect";
-    if(game.user.isGM && game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.label)){
-        if(("disabled" in change || ("label" in change && !data.disabled)) && !data.isSuppressed){
-            workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: change.disabled});
+    if(game.user.isGM){
+        const hook = "updateActiveEffect";
+        if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.label)){
+            if(("disabled" in change || ("label" in change && !data.disabled)) && !data.isSuppressed){
+                workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: change.disabled});
+            }
         }
     }
 });
 
 HOOKIDS['deleteActiveEffect'] = Hooks.on("deleteActiveEffect", async (data, options, userId) => {
-    const hook = "deleteActiveEffect";
     if(game.user.isGM){
+        const hook = "deleteActiveEffect";
         if (game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.label)) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: true});
         switch(data.label){
             case "Aura of Vitality": workflow.play('auraOfVitality', data, {hook: hook, activeEffectDelete: true}); break;
@@ -415,15 +415,13 @@ HOOKIDS['deleteActiveEffect'] = Hooks.on("deleteActiveEffect", async (data, opti
 });
 
 HOOKIDS['updateCombat'] = Hooks.on('updateCombat', async (combat, update, time, combatId) => {
-    const hook = "updateCombat";
     if(!combat.started) return
-    if(isOwner(document)){
-        if(game.settings.get("napolitano-scripts", "witch-bolt")) workflow.play('witchBolt', combat, {hook:hook}); 
-        if(game.settings.get("napolitano-scripts", "nathairs-mischief")) workflow.play('nathairsMischiefHook', combat, {hook:hook}); 
-    }
+    const hook = "updateCombat";
     workflow.play('pan', combat, {hook:hook}); 
     if(game.user.isGM){
         workflow.play('marker', combat, {hook:hook}); 
+        if(game.settings.get("napolitano-scripts", "witch-bolt")) workflow.play('witchBolt', combat, {hook:hook}); 
+        if(game.settings.get("napolitano-scripts", "nathairs-mischief")) workflow.play('nathairsMischiefHook', combat, {hook:hook}); 
         if(game.settings.get("napolitano-scripts", "chardalyn")) workflow.play('chardalyn', combat, {hook:hook}); 
         if(time.direction === 1){
             workflow.play('combatTurnUpdateEvents', combat, {hook:hook})
@@ -433,8 +431,8 @@ HOOKIDS['updateCombat'] = Hooks.on('updateCombat', async (combat, update, time, 
 });  
 
 HOOKIDS['deleteCombat'] = Hooks.on('deleteCombat', async(combat, options, id) => {
-    const hook = "deleteCombat";
 	if(game.user.isGM){
+        const hook = "deleteCombat";
         workflow.play('marker', combat, {hook:hook}); 
         workflow.play('deleteCombat', combat, options, {hook:hook})
     }

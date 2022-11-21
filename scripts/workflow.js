@@ -2300,24 +2300,16 @@ export class workflow extends framework {
      * @returns 
      */
     async _nathairsMischiefHook(){
-        if(!this.isOwner(this.source.token) || !this.sourceData.isConcentrating) return
+        if(!this.sourceData.isConcentrating) return
         const source = await fromUuid(this.getEffect(this.source.actor, "Concentrating")?.origin);
         if (source.name === this.config.name){
             this.templateData.id = canvas.scene.templates.find(t => t.flags?.[napolitano.ID]?.['nathairs-mischief']?.userId === game.userId && t.flags?.[napolitano.ID]?.['nathairs-mischief']?.source === this.source.actor.id)?.id
-            if(this.templateData.id ){
-                new Dialog({
-                    title: `Nathair's Mischief`,
-                    content: `<p>Move Nathair's Mischief cube template up to 10 feet then select OK</p>`,
-                    buttons: {
-                      confirmed: {
-                        label: "OK",
-                        callback: () => {
-                            const flag = this.template.flags[napolitano.ID]['nathairs-mischief'];
-                            macros.play([{actor: this.source.actor, item: this.getItem(), templateId: this.template.id, userId: flag.userId}], 'nathairsMischief', {hook: 'none'})
-                        }
-                      }
-                    }
-                  }).render(true);
+            if(this.templateData.id){
+                const doIt = await this.yesNo({title: `Nathair's Mischief`, prompt: `Move Nathair's Mischief cube template up to 10 feet then select Yes`, owner: this.sourceData.owner})
+                if(doIt){
+                    const flag = this.template.flags[napolitano.ID]['nathairs-mischief'];
+                    macros.play([{actor: this.source.actor, item: this.getItem(), templateId: this.template.id, userId: flag.userId}], 'nathairsMischief', {hook: 'none'})
+                }
             }
         }
     }
@@ -2435,25 +2427,13 @@ export class workflow extends framework {
      */
     async _relentless(){
         if(!this.hasItem({options: {uses: true}})) return
-        new Dialog({
-            title: this.config.name,
-            content: `<p>Use Relentless?</p>`,
-            buttons: {
-                confirmed: {
-                    label: "Yes",
-                    callback: async () => {
-                        await this.updateActor({data: {"system.attributes.hp.value": 1}})
-                        this.setItem()
-                        await this.updateItemUses(-1)
-                        this.message(`${this.name} rises back up after dropping to 0 HP!`, {title: 'Relentless'})
-                    }
-                },
-                cancel: {
-                    label: "No",
-                    callback: () => {}
-                }
-            }
-        }).render(true);
+        const doIt = await this.yesNo({prompt: `${this.name}, Use Relentless?`, owner: this.sourceData.owner})
+        if(doIt){
+            await this.updateActor({data: {"system.attributes.hp.value": 1}})
+            this.setItem()
+            await this.updateItemUses(-1)
+            this.message(`${this.name} rises back up after dropping to 0 HP!`, {title: 'Relentless'})
+        }
     }
 
     /**
@@ -2462,25 +2442,13 @@ export class workflow extends framework {
      */
     async _relentlessEndurance(){
         if(!this.hasItem({options: {uses: true}})) return
-        new Dialog({
-            title: this.config.name,
-            content: `<p>Use Relentless Endurance?</p>`,
-            buttons: {
-                confirmed: {
-                    label: "Yes",
-                    callback: async () => {
-                        await this.updateActor({data: {"system.attributes.hp.value": 1}})
-                        this.setItem()
-                        await this.updateItemUses(-1)
-                        this.message(`${this.name} rises back up after dropping to 0 HP!`, {title: 'Relentless Endurance'})
-                    }
-                },
-                cancel: {
-                    label: "No",
-                    callback: () => {}
-                }
-            }
-        }).render(true);
+        const doIt = await this.yesNo({prompt: `${this.name}, Use Relentless Endurance?`, owner: this.sourceData.owner})
+        if(doIt){
+            await this.updateActor({data: {"system.attributes.hp.value": 1}})
+            this.setItem()
+            await this.updateItemUses(-1)
+            this.message(`${this.name} rises back up after dropping to 0 HP!`, {title: 'Relentless Endurance'})
+        }
     }
     
     /**
@@ -2689,29 +2657,19 @@ export class workflow extends framework {
     }
 
     async _witchBolt(){
-        if(this.isOwner(this.source.token) && this.hasItem() && this.sourceData.isConcentrating){
+        if(this.hasItem() && this.sourceData.isConcentrating){
             this.setItem()
             this.setHitTargets(this.scene.tokens.filter(t => this.hasEffect(t.actor) && this.item.uuid === this.getEffect(t.actor)?.origin))
             if(!this.hasHitTargets) return
             this.spellLevel = this.getEffect(this.firstHitTarget.actor).changes[0].value
-            new Dialog({
-                title: `${this.config.name}`,
-                content: `<p>Continue concentrating?</p>`,
-                buttons: {
-                    confirmed: {
-                        label: "Continue",
-                        callback: async () => {
-                            this.generateEffect(this.firstHitTarget)
-                            this.roll = await new Roll(`${this.spellLevel}d12`).evaluate({async: true})
-                            await this.damage({type: 'lightning'})
-                        }
-                    },
-                    cancel: {
-                    label: "Cancel It!",
-                    callback: async () => await this.removeConcentration()
-                    }
-                }
-            }).render(true);
+            const doIt = await this.yesNo({title: 'Witch Bolt', prompt: `${this.name}, Continue concentrating?`, owner: this.sourceData.owner})
+            if(doIt){
+                this.generateEffect(this.firstHitTarget)
+                this.roll = await new Roll(`${this.spellLevel}d12`).evaluate({async: true})
+                await this.damage({type: 'lightning'})
+            } else{
+                await this.removeConcentration()
+            }
         }
     }
 }
