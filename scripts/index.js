@@ -315,14 +315,13 @@ HOOKIDS['renderChatMessage'] = Hooks.on('renderChatMessage', (message, html, dat
     if(game.settings.get("napolitano-scripts", "hide-names")) HideNPCNames._onRenderChatMessage(message, html, data);
 });
 
-if(game.settings.get("napolitano-scripts", "hide-names")){
-    HOOKIDS['renderImagePopout'] = Hooks.on("renderImagePopout", (app, html, data) => {
-        HideNPCNames._onRenderImagePopout(app, html, data);
-    });
-    HOOKIDS['renderCombatTracker'] = Hooks.on("renderCombatTracker", (app, html, data) => {
-        HideNPCNames._onRenderCombatTracker(app, html, data);
-    });
-}
+HOOKIDS['renderImagePopout'] = Hooks.on("renderImagePopout", (app, html, data) => {
+    if(game.settings.get("napolitano-scripts", "hide-names")) HideNPCNames._onRenderImagePopout(app, html, data);
+});
+
+HOOKIDS['renderCombatTracker'] = Hooks.on("renderCombatTracker", (app, html, data) => {
+    if(game.settings.get("napolitano-scripts", "hide-names")) HideNPCNames._onRenderCombatTracker(app, html, data);
+});
 
 HOOKIDS['createToken'] = Hooks.on("createToken", async (document, options, userId) => {
     if(game.user.isGM){
