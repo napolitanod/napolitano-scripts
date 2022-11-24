@@ -488,6 +488,9 @@ export const NAPOLITANOCONFIG = {
     powerSurge: {
         name: "Power Surge"
     },
+    rayOfEnfeeblement: {
+        name: "Ray of Enfeeblement"
+    },
     relentless: {
         name: "Relentless"
     },
@@ -703,6 +706,7 @@ export const CONFIGS = [
     {id:"pack-tactics", name:"Pack Tactics"},
     {id:"parry", name:"Parry"},
     {id:"precision-attack", name:"Precision Attack"},
+    {id:"rayOfEnfeeblement", name: "Ray of Enfeeblement"},
     {id:"relentless", name:"Relentless"},
     {id:"relentless-endurance", name:"Relentless Endurence"},
     {id:"taste-of-the-stones", name:"Taste of the Stones"},

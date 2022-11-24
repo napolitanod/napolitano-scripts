@@ -216,8 +216,8 @@ export async function useItem(itemUuid, options = {}, config = {}){
 
 export const wait = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
-export async function yesNo(title = '', prompt = 'Continue?', {img = '', gm = false, player = ''}={}){
-    let dialog, result, time = 20000, alteredPrompt = prompt + (player ? ` (${player} Prompted)` : '');
+export async function yesNo(title = '', prompt = 'Continue?', {img = '', gm = false, player = '', time = 20000}={}){
+    let dialog, result, alteredPrompt = prompt + (player ? ` (${player} Prompted)` : '');
     const finalPrompt = img ? `<div class="napolitano-yes-no-img"><img src="${img}"/><div>${alteredPrompt}</div></div>` : `<p>${alteredPrompt}</p>`
     const query = new Promise((resolve, reject) => {
         dialog = new Dialog({
@@ -238,11 +238,14 @@ export async function yesNo(title = '', prompt = 'Continue?', {img = '', gm = fa
             default: "two"
         }).render(true);
     });
-    closeDialog(dialog, time)
+    if(time) closeDialog(dialog, time)
     if(gm) {
         result = await query
         return result
-    }    
-    await Promise.race([query,!game.user.isGM ? napolitanoScriptsSocket.executeAsGM("yesNo", title, prompt, {img: img, gm: true, player: game.user.name}) : wait(time), wait(time)]).then((value) => {result = value})
+    }
+    const races = [query]
+    if(!game.user.isGM) races.push(napolitanoScriptsSocket.executeAsGM("yesNo", title, prompt, {img: img, gm: true, player: game.user.name}))
+    if(time) races.push(wait(time)) 
+    await Promise.race(races).then((value) => {result = value})
     return result
 }
