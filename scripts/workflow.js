@@ -230,6 +230,7 @@ export class framework {
             isSpell: this.item.type === 'spell' ? true : false,
             isSpellAttack: ["msak","rsak"].includes(this.item.system.actionType) ? true : false,
             isWeaponAttack: ["mwak","rwak"].includes(this.item.system.actionType) ? true : false,
+            mod: this.item.system.ability,
             quantity: this.item.system.quantity,
             requiresConcentration: this.item.system.components?.concentration ? true : false,
             usesMax: this.item.system.uses?.max ?? 0,
@@ -466,6 +467,15 @@ export class framework {
             origin.terms = origin.terms.concat([operator, term])
         }
         return origin
+    }
+
+    itemModifier(item = this.item, document = this.source.actor){
+        if(item.system?.ability) return item.system?.ability
+        const actor = document.actor ?? document
+        if(!this.isActor(actor)) return 'str'
+        if(item.system.properties.fin) return(actor.system.abilities.str.mod > actor.system.abilities.dex.mod) ? 'str' : 'dex'
+        if(item.system.properties.fir) return 'dex'
+        return 'str'
     }
 
     async buildBoundaryWall(document){
@@ -881,13 +891,18 @@ export class framework {
 
     async recurItemUse(maxTargets = 2, item = this.item){
         const targetSets = [];
-        let remainingTargets = maxTargets - this.targets.size, more = true;
+        let remainingTargets = maxTargets - this.targets.size, more = true, warning = '';
         if(game.user.targets.size) targetSets.push(game.user.targets.ids)
         while(remainingTargets > 0 && more){
-            const response = await this.yesNo({title: `${item.name} Targets`, prompt: `${maxTargets - remainingTargets} targets acquired.<br>You have ${remainingTargets} targets left.<br>Choose your next target and select 'Yes'.`})
+            const response = await this.yesNo({title: `${item.name} Targets`, time: 0, prompt: `${warning}${maxTargets - remainingTargets} targets acquired.<br>You have ${remainingTargets} targets left.<br>Choose your next target and select 'Yes'.`})
             if(response){
-                remainingTargets = remainingTargets - game.user.targets.size
-                if(game.user.targets.size) targetSets.push(game.user.targets.ids)
+                if(remainingTargets - game.user.targets.size){
+                    warning = `You currently have too many targets selected on the canvas (${game.user.targets.size}).<br>`
+                } else {
+                    warning = ''
+                    remainingTargets = remainingTargets - game.user.targets.size
+                    if(game.user.targets.size) targetSets.push(game.user.targets.ids)
+                }
             }
             else {
                 more = false;
@@ -1267,14 +1282,27 @@ export class framework {
         ui.notifications.warn(message)
     }
 
-    async yesNo({title = this.config.name, prompt = this.config.prompt, owner = '', document = false, img = this.item?.img}={}){
+    async wrapRoll(origin, {mod = 2, isAttack = false, div = false}={}){
+        const numerator = new NumericTerm({number: origin.total})
+        await numerator.evaluate()
+        const operator = new OperatorTerm({operator: (div ? "/" : "*")})
+        await operator.evaluate()
+        const term = new NumericTerm({number: mod})
+        await term.evaluate()
+        origin.terms = [numerator,operator, term]
+        origin = Roll.fromTerms(origin.terms)
+        if(isAttack) this.data.attackTotal = origin.total
+        return origin
+    }
+
+    async yesNo({title = this.config.name, prompt = this.config.prompt, owner = '', document = false, img = this.item?.img, time = 20000}={}){
         let choice
         if(owner === "GM"){
-            choice = await napolitanoScriptsSocket.executeAsGM("yesNo",title, prompt, {img: img})
+            choice = await napolitanoScriptsSocket.executeAsGM("yesNo",title, prompt, {img: img, time: time})
         } else {
             choice = 
-            owner?.id ? await napolitanoScriptsSocket.executeAsUser("yesNo", owner.id, title, prompt, {img: img}) 
-            : await yesNo(title, prompt, {img: img})
+            owner?.id ? await napolitanoScriptsSocket.executeAsUser("yesNo", owner.id, title, prompt, {img: img, time: time}) 
+            : await yesNo(title, prompt, {img: img, time: time})
         }
         return document ? {document: document, yes: choice} : choice
     }
@@ -1298,6 +1326,7 @@ export class workflow extends framework {
             case 'midi-qol.preAttackRollComplete':
             case 'midi-qol.AttackRollComplete':
             case 'midi-qol.preCheckHits':
+            case 'midi-qol.preDamageRoll':
             case 'midi-qol.preDamageRollComplete':
             case 'midi-qol.DamageRollComplete': 
             case 'midi-qol.RollComplete': 
@@ -1393,6 +1422,7 @@ export class workflow extends framework {
             case 'magicMissile': await flow._magicMissile(); break;
             case 'parry': await flow._parry(); break;
             case 'precisionAttack': await flow._precisionAttack(); break;
+            case 'rayOfEnfeeblement': await flow._rayOfEnfeeblement(); break;
             case 'scorchingRay': await flow._scorchingRay(); break;
             case 'wardingFlare': await flow._wardingFlare(); break;
         }
@@ -1945,7 +1975,7 @@ export class workflow extends framework {
         }
         else if(this.hook === 'midi-qol.preambleComplete'){
             if(!this.item.name === 'Eldritch Blast') return
-            const maxTargets = 3 + this.upcastAmount
+            const maxTargets = this.cantripScale
             await this.recurItemUse(maxTargets)
         }
     }
@@ -2418,6 +2448,14 @@ export class workflow extends framework {
             this.appendMessageMQ(`+${sup.total} to attack roll due to Precision Attack.`)
             this.updateItemUses(-1, supItem)
             this.message(`Superiority Dice reduced by one on ${this.name}.`,{whisper: "GM"})
+        }
+    }
+
+    async _rayOfEnfeeblement(){
+        console.log(this.data.damageRoll, this.data.damageRoll?.formula)
+        if (this.data.damageRoll?.formula && this.hasEffect() && this.itemData.isWeaponAttack && this.itemModifier() === 'str'){
+            await this.wrapRoll(this.data.damageRoll, {mod: 2, div: true})
+            this.appendMessageMQ(`Damage halved due to Ray of Enfeeblement.`)
         }
     }
 

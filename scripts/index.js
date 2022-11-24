@@ -197,15 +197,17 @@ Hooks.once("midi-qol.midiReady", () => {
 
     HOOKIDS['midi-qol.preDamageRollComplete'] = Hooks.on("midi-qol.preDamageRollComplete", async (data) => {
         const hook = "midi-qol.preDamageRollComplete", results = [];
+
         switch(data.item?.name){
              case 'Eldritch Blast': workflow.playAsync('eldritchBlast', data, {hook: hook}); break;
         }
-        if(game.settings.get("napolitano-scripts", "cutting-words")){
-           results.push(workflow.playAsync('cuttingWords', data, {hook: hook}))
-        }
-        if(game.settings.get("napolitano-scripts", "parry")){
-           results.push(workflow.playAsync('parry', data, {hook: hook}))
-        }
+
+        //wraps damage, do last
+        if(game.settings.get("napolitano-scripts", "rayOfEnfeeblement")) results.push(workflow.playAsync('rayOfEnfeeblement', data, {hook: hook}))
+                
+        if(game.settings.get("napolitano-scripts", "cutting-words")) results.push(workflow.playAsync('cuttingWords', data, {hook: hook}))
+        if(game.settings.get("napolitano-scripts", "parry")) results.push(workflow.playAsync('parry', data, {hook: hook}))
+        
         await Promise.all(results)
     });
 
