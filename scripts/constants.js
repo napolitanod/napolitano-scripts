@@ -519,6 +519,9 @@ export const NAPOLITANOCONFIG = {
     shoveBack: {
         name: "Shove Aside"
     },
+    silveryBarbs: {
+        name: "Silvery Barbs"
+    },
     sleep: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/1st_Level/Sleep/Cloud01_02_Regular_Pink_400x400.webm', scale: 1}},
         name: "Sleep"
@@ -709,6 +712,7 @@ export const CONFIGS = [
     {id:"rayOfEnfeeblement", name: "Ray of Enfeeblement"},
     {id:"relentless", name:"Relentless"},
     {id:"relentless-endurance", name:"Relentless Endurence"},
+    {id:"silvery-barbs", name:"Silvery Barbs"},
     {id:"taste-of-the-stones", name:"Taste of the Stones"},
     {id:"warding-flare", name:"Warding Flare"},
     {id:"wild-surge", name:"Wild Surge"},

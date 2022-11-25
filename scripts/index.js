@@ -1,9 +1,9 @@
 import {napolitano} from "./napolitano-scripts.js";
-import {log} from "./log.js";
+import {note} from "./note.js";
 import {api} from "./api.js";
 import {initiateLinking} from "./link-item-resource.js";
 import {CONFIGS, EFFECTCONDITIONS, HOOKIDS, setConfigs} from "./constants.js";
-import {tokenCreateEmbeddedDocuments, addActiveEffectDerived, addItem, choose, deleteItem, destroyItem, isOwner, killIn, logIt, requestSkillCheck, updateActor, updateItem, updatePrototypeToken, updateToken, useItem, yesNo} from "./helpers.js";
+import {tokenCreateEmbeddedDocuments, addActiveEffectDerived, addItem, choose, deleteItem, destroyItem, killIn, logIt, promptTarget, requestSkillCheck, updateActor, updateItem, updatePrototypeToken, updateToken, useItem, yesNo} from "./helpers.js";
 import { workflow } from "./workflow.js";
 export let napolitanoScriptsSocket; //var for socketlib
 import {HideNPCNames} from "./hideNames.js"
@@ -109,20 +109,6 @@ Hooks.once('ready', async function() {
         if(['Counterspell', 'Dispell Magic'].includes(item.name)) workflow.play('powerSurge', {item: item}, {hook: hook})    
     });
 
-    HOOKIDS['napolitano.postRollAbilityTest'] = Hooks.on("napolitano.postRollAbilityTest", async (actor, roll, ability) => {
-        const hook = "napolitano.postRollAbilityTest", data = {actor: actor, roll: roll, ability: ability, options: {}}
-        if(game.settings.get("napolitano-scripts", "cutting-words")){
-            await workflow.playAsync('cuttingWords', data, {hook: hook})
-         }
-    });
-
-    HOOKIDS['napolitano.postRollSkill'] = Hooks.on("napolitano.postRollSkill", async (actor, roll, ability) => {
-        const hook = "napolitano.postRollSkill", data = {actor: actor, roll: roll, ability: ability, options: {}}
-        if(game.settings.get("napolitano-scripts", "cutting-words")){
-            await workflow.playAsync('cuttingWords', data, {hook: hook})
-         }
-    });
-
     HOOKIDS['renderTokenActionHUD'] = Hooks.on('renderTokenActionHUD', async function(hud, html, options = {}){
         const token = canvas.scene.tokens.find(t => t.id === options.actions?.tokenId)
         if(!token) return
@@ -184,6 +170,9 @@ Hooks.once("midi-qol.midiReady", () => {
         }
         if(game.settings.get("napolitano-scripts", "guided-strike")){
             results.push(workflow.playAsync('guidedStrike', data, {hook: hook}))
+        }
+        if(game.settings.get("napolitano-scripts", "silvery-barbs")){
+            results.push(workflow.playAsync('silveryBarbs', data, {hook: hook}))
         }
         await Promise.all(results)  
         if(game.settings.get("napolitano-scripts", "cutting-words")){
@@ -289,6 +278,7 @@ Hooks.once("socketlib.ready", () => {
     napolitanoScriptsSocket.register("destroyItem", destroyItem);
     napolitanoScriptsSocket.register("killIn", killIn);
     napolitanoScriptsSocket.register("logIt", logIt);
+    napolitanoScriptsSocket.register("promptTarget", promptTarget);
     napolitanoScriptsSocket.register("requestSkillCheck", requestSkillCheck);
     napolitanoScriptsSocket.register("updateActor", updateActor);
     napolitanoScriptsSocket.register("updateItem", updateItem);
@@ -310,7 +300,7 @@ HOOKIDS['renderChatMessage'] = Hooks.on('renderChatMessage', (message, html, dat
         const btn = $(`<a class="" style=""><i class="fas fa-feather" title="${game.i18n.localize('EN.log.button-title')}"></i></a>`);
         html.find('.message-metadata').append(btn);
         btn.click(async e => {
-            log.recordChat(message.export());
+            note.recordChat(message.export());
             btn.css('color', 'Green');
         });
     }

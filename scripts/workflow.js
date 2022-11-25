@@ -1,10 +1,10 @@
 import {napolitano} from "./napolitano-scripts.js";
-import {importActorIfNotExists, chat, choose, getActorOwner, getSpellData, isOwner, requestSkillCheck, useItem, wait, yesNo} from "./helpers.js";
+import {importActorIfNotExists, chat, choose, getActorOwner, promptTarget, getSpellData, isOwner, requestSkillCheck, useItem, wait, yesNo} from "./helpers.js";
 import {EVIL, INCAPACITATEDCONDITIONS, NAPOLITANOCONFIG, PCS, TEMPLATEMODIFICATION} from "./constants.js";
 import {napolitanoScriptsSocket} from "./index.js";
 import {macros} from "./macros.js";
 import {contest} from './contest.js';
-import {log} from "./log.js";
+import {note} from "./note.js";
 
 export class framework {
     constructor(ruleset, data, options = {}){
@@ -730,6 +730,29 @@ export class framework {
         return getSpellData(actor, actor.items?.find(i => i.name === item))
     }
 
+    getSpellOptions({itemName = this.config.name, document = this.source.actor }={}){
+        const spell = this.getItem(itemName, document)
+        if(!spell) return
+        const mode = spell.system?.preparation?.mode ?? "use"
+        let choices = []  
+        if('atwill' === mode){
+            choices = [[mode, 'At-Will']]
+        }
+        else if('innate' === mode && this.getItemUsesRemaining(spell)){
+            choices = [[mode, 'Innate']]
+        }
+        else if((['always', 'pact'].includes(mode) || (mode === 'prepared' && spell.system.preparation.prepared))){
+            const spellData = this.getSpellData({document: document, item: itemName})
+            if(spellData.canCast){
+                choices = spellData.spellLevels.filter(c => c.canCast && c.hasSlots).map(s => [s.level, s.label])
+            }
+        }
+        else if(this.getItemUsesRemaining(spell)){
+            choices = [['use', 'Item Use']]
+        }
+        return choices   
+    }
+
     getSpellSlotsRemaining(level = 1, document = this.source.actor){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
@@ -827,6 +850,18 @@ export class framework {
         } 
     }
 
+    async promptTarget({title = this.config.name, prompt = this.config.prompt, event = '', owner = '', origin = this.source.token}={}){
+        let choice
+        if(owner === "GM"){
+            choice = await napolitanoScriptsSocket.executeAsGM("promptTarget", {title: title, prompt: prompt, origin: origin, event: event})
+        } else {
+            choice = 
+            owner?.id ? await napolitanoScriptsSocket.executeAsUser("promptTarget", owner.id, {title: title, prompt: prompt, origin: origin, event: event}) 
+            : await promptTarget({title: title, prompt: prompt, origin: origin, event: event})
+        }
+        return choice
+    }
+
     async setOccurredOnce({document = this.source.actor, flag = this.ruleset, id = this.firstHitTarget.id}={}){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
@@ -866,7 +901,7 @@ export class framework {
     }
 
     async logNote(message){
-        log.record(message);
+        note.record(message);
     }
 
     message(message, options = {}){    
@@ -968,9 +1003,11 @@ export class framework {
         return {success: success, roll: checkRoll, document: document, actor: actor}
     }
 
-    async rollDice(dice, {show=true}={}){
-        this.roll = await new Roll(dice).evaluate({async: true})
-        if(show) this.showRoll()
+    async rollDice(dice, {show=true, toWorkflow=true}={}){
+        const roll = await new Roll(dice).evaluate({async: true})
+        if(toWorkflow) this.roll = roll
+        if(show) this.showRoll(roll)
+        return roll
     }
 
     async rollSave(document = this.firstTarget, {dc = this.sourceData.spelldc, source = this.item.name, type = 'str', chatMessage = false, show = false, fastforward = true, disadvantage = false, advantage = false, flavor = ''} = {}){
@@ -1045,6 +1082,10 @@ export class framework {
 
     setMidiRollAdvantage(){
         this.data.advantage = true
+    }
+
+    setMidiRollDisadvantage(){
+        this.data.disadvantage = true
     }
 
     setMidiRollIsCritical(){
@@ -1131,6 +1172,15 @@ export class framework {
         return after
     }
 
+    async updateSpellUse(amt, slot, {itemName = this.config.name, document = this.source.actor}={}){
+        const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
+        const spell = this.getItem(itemName, actor)
+        const lvl = !['atwill', 'innate', 'use'].includes(slot) ? (slot === 'pact' ? actor.system.spells.pact.level : Number(slot)) : spell.system.level
+        const updated = spell.system.preparation.mode === 'atwill' ? 1 : (spell.system.preparation.mode.includes(['innate','use']) ? await this.updateItemUses(amt, spell) :  await this.updateActorSpellLevel(amt, slot, actor))             
+        return {updated: updated, lvl: lvl}
+    }
+
     async revertDetection({document = this.source.token ?? this.source.actor, trackingId = ''}={}){
         function updateData(oldFlag, detectionModes){
             const diff = detectionModes.find(d => d.id === oldFlag.new.id && d.range === oldFlag.new.range && d.enabled === oldFlag.new.enabled) 
@@ -1145,7 +1195,6 @@ export class framework {
             const tokenFlag = document.flags[`${napolitano.ID}`]?.detectionModes?.[`${trackingId}`] ?? actorFlag
             if(tokenFlag){
                 const tokenData = updateData(tokenFlag, document.detectionModes)
-                console.log(tokenData)
                 if (tokenData) await this._updateDetectionToken({document: document, data: tokenData, trackingId: trackingId, flag: flag})
             }
             if(!document.isLinked) return
@@ -1280,6 +1329,19 @@ export class framework {
 
     async warn(message){
         ui.notifications.warn(message)
+    }
+
+    async rerollReplace(origin, {keep = 'highest', isAttack = false} = {}){
+        const newRollResult = await this.rollDice('1d20', {toWorkflow: false})
+        const currentDieIndex = origin.terms.findIndex(d => d.faces === 20)
+        const currentDie = origin.terms[currentDieIndex]
+        if(keep === 'lowest' && currentDie && currentDie.total > newRollResult.total) {
+            origin._total = origin._total - (currentDie.total - newRollResult.total)
+            origin.terms[currentDieIndex] = newRollResult.terms[0]
+            origin = Roll.fromTerms(origin.terms)
+            if(isAttack) this.data.attackTotal = origin.total
+        }
+        return {origin: origin, new: newRollResult}
     }
 
     async wrapRoll(origin, {mod = 2, isAttack = false, div = false}={}){
@@ -1424,6 +1486,7 @@ export class workflow extends framework {
             case 'precisionAttack': await flow._precisionAttack(); break;
             case 'rayOfEnfeeblement': await flow._rayOfEnfeeblement(); break;
             case 'scorchingRay': await flow._scorchingRay(); break;
+            case 'silveryBarbs': await flow._silveryBarbs(); break;
             case 'wardingFlare': await flow._wardingFlare(); break;
         }
     }
@@ -1515,9 +1578,8 @@ export class workflow extends framework {
             if(this.hasEffect(this.source.actor, "Ancestral Protectors")){
                 let eff = this.getEffect(this.source.actor, "Ancestral Protectors")
                 if(this.firstTarget.actor.uuid !== eff.origin) {
+                    this.setMidiRollDisadvantage()
                     await this.addActiveEffect({effectName: "Ancestral Protectors - Targeted", uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid})
-                    this.data.disadvantage = true;
-                    return this.data
                 }
             }
         }
@@ -1763,17 +1825,17 @@ export class workflow extends framework {
         let cancel = false
         if(this.item.type === 'spell' || this.itemData.isSpell) {
             const results = []
-            const avail = this.scene.tokens.filter(t => 
-                                !this.hasEffect(t, 'Reaction')
-                                && this.isResponsive(t)
-                                && this.tokenData.disposition !== t.disposition
-                                && this.hasItem({document: t, options: {uses: true}}) 
-                                && ((this.item.type !== 'spell' ) || this.getSpellData({document: t}).canCast) 
-                                && this.getDistance(t, this.source.token) <= 60
-                                )
-            for(const token of avail) {
-                const choices = this.getSpellData({document: token, item: "Counterspell"})
-                results.push(this.choose(choices.spellLevels.filter(c => c.canCast && c.hasSlots).map(s => [s.level, s.label]), `${token.name}, a spell is being cast within range. Cast Counterspell?`, 'Counterspell', {owner: getActorOwner(token), document: token, img: this.getItem("Counterspell", token)?.img}))
+            for(const token of this.scene.tokens) {
+                if(
+                    !this.hasEffect(token, 'Reaction') 
+                    && this.isResponsive(token) 
+                    && this.tokenData.disposition !== token.disposition 
+                    && this.hasItem({document: token, options: {uses: true}}) 
+                    && this.getDistance(token, this.source.token) <= 60
+                ){
+                    let choices = this.getSpellOptions({document: token})
+                    if(choices.length) results.push(this.choose(choices, `${token.name}, a spell is being cast within range. Cast Counterspell?`, 'Counterspell', {owner: getActorOwner(token), document: token, img: this.getItem("Counterspell", token)?.img}))                
+                }
             }
             await Promise.all(results).then(async (values)=>{
                 const casts = values.filter(v => v.choice)
@@ -1782,19 +1844,16 @@ export class workflow extends framework {
                         if(workflow.id !== this.data.id) return
                         const spellLvl = workflow.itemLevel ?? 0
                         for (const value of casts){
-                            console.log(value) 
-                            const spell = this.getItem("Counterspell", value.document)
-                            const counterLvl = value.choice ? (value.choice === 'pact' ? value.document.actor.system.spells.pact.level : Number(value.choice)) : spell.system.level
-                            const updated = await this.updateActorSpellLevel(-1, value.choice, value.document)
-                            if(updated >= 0){
+                            const updated = await this.updateSpellUse(-1, value.choice, {document: value.document})
+                            if(updated.updated >= 0){
                                 this.message(`${value.document.name} spell level ${value.choice} reduced by one.`, {title: "Counterspell Cast", whisper: "GM"})
-                                if(counterLvl >= spellLvl) {cancel = true}
+                                if(updated.lvl >= spellLvl) {cancel = true}
                                 else {
                                     const dc = 10 + spellLvl
-                                    const check = await this.rollCheck(value.document, {dc: dc, show: true, source: spell.name, type: value.document.actor.system.attributes.spellcasting})
+                                    const check = await this.rollCheck(value.document, {dc: dc, show: true, source: this.config.name, type: value.document.actor.system.attributes.spellcasting})
                                     if(check.success) cancel = true
                                 }
-                                this.message(`${value.document.name} casts counterspell at level ${counterLvl} and the spell is ${cancel ? 'successfully' : 'not successfully'} canceled`, {title: "Counterspell"})
+                                this.message(`${value.document.name} casts counterspell at level ${updated.lvl} and the spell is ${cancel ? 'successfully' : 'not successfully'} canceled`, {title: "Counterspell"})
                                 this.addActiveEffect({effectName: 'Reaction', uuid: value.document.actor.uuid, origin: value.document.actor.uuid})
                             } else {
                                 this.message(`${value.document.name} does not have any remaining uses at the ${value.choice} level.`, {title: "Counterspell Not Cast"})
@@ -1869,23 +1928,6 @@ export class workflow extends framework {
         }
     }
 
-    /*
-    async _cuttingWords(){
-        if(!this.getItem('Cutting Words') || !this.hasEffect(this.source.actor, 'Cutting Words') || !this.data.attackTotal) return
-        const insp = this.getItem('Bardic Inspiration');
-        if(!this.getItemUsesRemaining(insp)) return
-        const originalRollTotal = this.data.attackRoll.terms[0]?.total ?? 0
-        if(!originalRollTotal) return
-        const response = await this.yesNo({ title: 'Cutting Words', prompt: `The attack roll is ${originalRollTotal}. Use Cutting Words and reroll the d20?`, owner: this.sourceData.owner})
-        if(response){
-            const newDice = await this.rollDice('1d20')
-            const keep = await this.yesNo({ title: 'Cutting Words', prompt: `The new roll is ${newDice.total}. Keep the new roll?`, owner: this.sourceData.owner})
-            this.message(`${this.name} uses Cutting Word, ${keep ? 'and chooses to keep the original roll.': 'changing the roll from ' + originalRollTotal + ' to ' + newDice.total + '.'} `, {title: 'Cutting Words'})
-            this.updateItemUses(-1, insp)
-            this.message(`Bardic Inspiration reduced by one on ${this.name}.`,{whisper: "GM"})
-        }
-    }
-    */
     async _darkness(){
         if(this.hook === 'createToken') {
             await this.buildBoundaryWall(this.source.token)
@@ -2452,7 +2494,6 @@ export class workflow extends framework {
     }
 
     async _rayOfEnfeeblement(){
-        console.log(this.data.damageRoll, this.data.damageRoll?.formula)
         if (this.data.damageRoll?.formula && this.hasEffect() && this.itemData.isWeaponAttack && this.itemModifier() === 'str'){
             await this.wrapRoll(this.data.damageRoll, {mod: 2, div: true})
             this.appendMessageMQ(`Damage halved due to Ray of Enfeeblement.`)
@@ -2509,6 +2550,64 @@ export class workflow extends framework {
     async _shortRest() {
         await this._powerSurge();
     } 
+
+    async _silveryBarbs(){
+        let type, originalRollTotal, rollSource
+        switch(this.hook){
+            case 'midi-qol.preAttackRollComplete':
+                type = 'attack'
+                originalRollTotal = this.data.attackRoll?.terms[0]?.total ?? 0
+                rollSource = this.data.attackRoll
+                break;
+            default:
+                type = this.hook === 'napolitano.postRollAbilityTest' ? 'ability check' : (this.hook === 'napolitano.postRollAbilitySave' ? 'saving throw' : 'skill' )
+                originalRollTotal = this.roll?.terms[0]?.total ?? 0
+                rollSource = this.roll
+                break;
+        }
+        if(!rollSource.terms.find(d => d.faces === 20)) return
+        const results = []
+        for(const token of this.scene.tokens) {
+            if(
+                !this.hasEffect(token, 'Reaction') 
+                && this.isResponsive(token) 
+                && this.tokenData.disposition !== token.disposition 
+                && this.hasItem({document: token, options: {uses: true}}) 
+                && this.getDistance(token, this.source.token) <= 60
+            ){
+                let choices = this.getSpellOptions({document: token})
+                if(choices.length) results.push(this.choose(choices, `${token.name}, The ${type} roll is <span class="napolitano-label">${originalRollTotal}</span>. Cast Silvery Barbs?`, 'Silvery Barbs', {owner: getActorOwner(token), document: token, img: this.getItem("Silvery Barbs", token)?.img}))        
+            }
+        }
+        if(results.length){
+            await Promise.all(results).then(async (values)=>{
+                const casts = values.filter(v => v.choice)
+                if(casts.length){
+                    const adv = []
+                    for (const value of casts){
+                        const updated = await this.updateSpellUse(-1, value.choice, {document: value.document})
+                        if(updated.updated >= 0){
+                            this.message(`${value.document.name} spell level ${value.choice} reduced by one.`, {title: "Silvery Barbs Cast", whisper: "GM"})
+                            const result = await this.rerollReplace(rollSource, {keep: 'lowest', isAttack: type === 'attack' ? true : false})
+                            this.message(`${value.document.name} casts Silvery Barbs at level ${updated.lvl}. They roll a ${result.new.terms[0]?.total} and ${result.new.terms[0]?.total < originalRollTotal ? 'replace' : 'keep'} the original roll of ${originalRollTotal}.`, {title: "Silvery Barbs"})
+                            this.addActiveEffect({effectName: 'Reaction', uuid: value.document.actor.uuid, origin: value.document.actor.uuid})
+                            adv.push(this.promptTarget({title: 'Silvery Barbs Advantage', origin: value.document.actor.uuid, owner: getActorOwner(value.document), event: 'Grant Silvery Barbs Advantage', prompt: `Select a target to grant advantage to on their next attack roll, saving throw or ability check.`}))
+                        } else {
+                            this.message(`${value.document.name} does not have any remaining uses at the ${value.choice} level.`, {title: "Silvery Barbs Not Cast"})
+                        }    
+                    }
+                    await Promise.all(adv).then(async (grantees)=>{
+                        for (const grantee of grantees){
+                            if(grantee.targets[0]){
+                                const target = this.scene.tokens.find(t => t.id === grantee.targets[0])
+                                if(target) this.addActiveEffect({effectName: 'Silvery Barbs Advantage', origin: grantee.origin, uuid: target.actor.uuid})
+                            }
+                        }
+                    });
+                }
+            })
+        }
+    }
 
     /**
      * Tested: v10

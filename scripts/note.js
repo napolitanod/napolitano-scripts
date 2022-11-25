@@ -1,6 +1,6 @@
 import {napolitano} from "./napolitano-scripts.js";
 
-export class log {
+export class note {
     constructor(message){
         this.message = message,
         this.journalName = game.settings.get(napolitano.ID, "log");

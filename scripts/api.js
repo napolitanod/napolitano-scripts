@@ -1,6 +1,6 @@
 
 import {napolitano} from "./napolitano-scripts.js";
-import {log} from "./log.js";
+import {note} from "./note.js";
 import {napolitanoScriptsSocket} from "./index.js";
 import {macros} from "./macros.js";
 import {contest} from "./contest.js";
@@ -47,7 +47,7 @@ export class api {
      * @param {string} identifier - an identifier that user provides that differentiates this highlight layer from other highlight layers created for this zone
      */
     static async _logNote(message){
-        log.record(message);
+        note.record(message);
     }
 
     static async _tokenCreateEmbeddedDocuments(token, document, data){

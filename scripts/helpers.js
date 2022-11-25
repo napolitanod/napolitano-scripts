@@ -156,6 +156,29 @@ export async function killIn(tokens, time){
     });
 }
 
+export async function promptTarget({title = 'Choose target', origin = '', event = 'New Target', prompt = 'Select the target then hit OK'}={}){
+    const targets = await new Promise((resolve) => {
+        new Dialog({
+            title: title,
+            content: `<div class="napolitano-chat-message-title">${event}</div><div class="napolitano-chat-message-body">${prompt}</div>`,
+            buttons: {
+                yes: {
+                    icon: '<i class="fas fa-check"></i>',
+                    label: "OK",
+                    callback: async () => resolve(game.user.targets?.ids ?? [])
+                },
+                cancel: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: "Cancel",
+                    callback: () => resolve([])
+                }
+            },
+            default: "cancel"
+        }).render(true);
+    });
+    return {origin: origin, targets: targets}
+}
+
 export function logIt(message, data = {}){
     console.log(message, data)
 }
