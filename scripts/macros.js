@@ -38,6 +38,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'bigbysHand': await macro._bigbysHand(); break;
             case 'blight': await macro._blight(); break;
             case 'chromaticOrb': await macro._chromaticOrb(); break;
+            case 'climbUpon': await macro._climbUpon(); break;
             case 'cloudOfDaggers': await macro._cloudOfDaggers(); break;
             case 'confusingGaze': await macro._confusingGaze(); break;
             case 'createBonfire': await macro._createBonfire(); break;
@@ -45,6 +46,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'darkness': await macro._darkness(); break;
             case 'daylight': await macro._daylight(); break;
             case 'disarm': await macro._disarm(); break;
+            case 'dislodgeFrom': await macro._dislodgeFrom(); break;
             case 'dodge': await macro._dodge(); break;
             case 'divineSmite': await macro._divineSmite(); break;
             case 'dragonsBreath': await macro._dragonsBreath(); break;
@@ -56,6 +58,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'falseLife': await macro._falseLife(); break;
             case 'featherOfDiatrymaSummoning': await macro._featherOfDiatrymaSummoning(); break;
             case 'figurineOfWonderousPowerLions': await macro._figurineOfWonderousPowerLions(); break;
+            case 'figurineOfWonderousPowerObsidianSteed': await macro._figurineOfWonderousPowerObsidianSteed(); break;
             case 'findFamiliar': await macro._findFamiliar(); break;
             case 'flamingSphere': await macro._flamingSphere(); break;
             case 'fogCloud': await macro._fogCloud(); break;
@@ -89,6 +92,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'shoveToSide': await macro._shove(); break;
             case 'shoveBack': await macro._shove(); break;
             case 'shoveProne': await macro._shove(); break;
+            case 'silveryBarbs': await macro._silveryBarbs(); break;
             case 'spareTheDying': await macro._spareTheDying(); break;
             case 'spikeGrowth': await macro._spikeGrowth(); break;
             case 'spiritualWeapon': await macro._spiritualWeapon(); break;
@@ -311,6 +315,17 @@ game.napolitano.macros(args, 'createBonfire', options)
         await this.damage({type: type, targets: [this.firstHitTarget], show: false})
     }
 
+    async _climbUpon(){
+        if(!this.firstTarget) return this.error('You must target a token!')
+        const targetSize = this.getSize(this.firstTarget)
+        if(SIZES[targetSize] - SIZES[this.sourceData.size] < 2) return this.error('You cannot climb onto a creature that is less than 2 sizes larger than you!')
+        await this.contest()
+        if(this.contestData.won){
+            await wait(2000) 
+            this.message(`${this.name} successfully climbs upon the hostile creatures space!`, {title: 'Climb Onto a Bigger Creature'})
+        }
+    }
+
     async _confusingGaze(){//tested v10
         if(this.feature.dae === "on"){
             const options = {}
@@ -389,10 +404,20 @@ game.napolitano.macros(args, 'createBonfire', options)
         const weapons = this.source.actor.items.filter(i => i.type === 'weapon')
         const choice = await this.choose(weapons.map(w => [w.id, w.name]), 'Choose the weapon to make the disarming attack with.', `${this.name} choose weapon`)
         const item = weapons.find(w => w.id === choice)
+        if(!item) return
         this.contestData.source.roll = await item.rollAttack({fastForward: true})
         this.contestData.target.roll = await this.rollSkill(['ath', 'acr'], 'Choose skill to counteract the disarm attempt', this.firstTarget)
         await wait(4000) 
         this.message(`${this.name} ${this.contestData.source.roll.total > this.contestData.target.roll.total ? 'succeeds at ' : 'fails at '} disarming their opponent`, {title: 'Disarm Attempt Result'})
+    }
+
+    async _dislodgeFrom(){
+        if(!this.firstTarget) return this.error('You must target a token!')
+         await this.contest()
+        if(this.contestData.won){
+            await wait(2000) 
+            this.message(`${this.name} successfully dislodges the hostile creature!`, {title: 'Dislodge Creature'})
+        }
     }
 
     async _divineSmite(){
@@ -679,7 +704,12 @@ game.napolitano.macros(args, 'createBonfire', options)
     async _figurineOfWonderousPowerLions(){
         await this.summon();
         await this.summon();
-        this.logNote(`Figurine of Wonderous Power: Lions was used`)
+        this.logNote(`Figurine of Wonderous Power: Lions was used and cannot be used for another 7 days.`)
+    }
+
+    async _figurineOfWonderousPowerObsidianSteed(){
+        await this.summon();
+        this.logNote(`Figurine of Wonderous Power: Obsidian Steed was used and cannot be used for another 5 days.`)
     }
 
     async _findFamiliar(){ //tested v10
@@ -1213,6 +1243,12 @@ game.napolitano.macros(args, 'createBonfire', options)
                 this.message(`${this.firstTarget.name} is pushed back 5 feet by the shove!`, {title: 'Shove Back Result'})
             }
         }
+    }
+
+    async _silveryBarbs(){
+        const response = await this.promptTarget({title: 'Silvery Barbs Advantage', origin: this.source.actor.uuid, owner: this.sourceData.owner, event: 'Grant Silvery Barbs Advantage', prompt: `Select a target to grant advantage to on their next attack roll, saving throw or ability check.`})
+        const target = this.scene.tokens.find(t => t.id === response.targets[0])
+        if(target) this.addActiveEffect({effectName: 'Silvery Barbs Advantage', origin: response.origin, uuid: target.actor.uuid})
     }
 
     async _spareTheDying(){

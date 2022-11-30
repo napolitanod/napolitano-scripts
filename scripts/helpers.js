@@ -192,6 +192,7 @@ export async function requestSkillCheck(actorUuid, options, prompt = 'Select a s
     const actor = document?.actor ?? document
     if(actor?.documentName !== 'Actor') return
     const skill = options.length > 1 ? await choose(SKILLS.filter(s => options.includes(s[0])), prompt + ' What will you roll?', `${actor.name} please choose`) : options[0]
+    if(!skill) return {}
     const result = await actor.rollSkill(skill, {fastForward: true, ...dice})
     return result
 }
