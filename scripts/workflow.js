@@ -453,11 +453,9 @@ export class framework {
         chatMessage.update({content: content});
     }
 
-    async appendRoll(origin, roll, {sign = 1, isAttack = false, mod = 0}={}){
+    async appendRoll(origin, roll, {sign = 1, isAttack = false, isDamage = false, mod = 0}={}){
         const total = (roll ? (roll.total * sign) : 0) + (mod * sign)
-        if(isAttack) this.data.attackTotal = this.data.attackTotal + total
         origin._total = origin._total + total
-        origin._formula = origin._formula + (roll ? (sign === 1 ? " + " : " - ") + roll._formula : '') + (mod ? (sign === 1 ? " + " : " - ") + mod : '')
         const operator = new OperatorTerm({operator: (sign === 1 ? "+" : "-")})
         await operator.evaluate()
         if(roll) origin.terms = origin.terms.concat([operator, ...roll.terms])
@@ -466,6 +464,8 @@ export class framework {
             await term.evaluate()
             origin.terms = origin.terms.concat([operator, term])
         }
+        origin = Roll.fromTerms(origin.terms)
+        await this.updateMQItemCard({roll: origin, isAttack: isAttack, isDamage: isDamage})
         return origin
     }
 
@@ -518,7 +518,7 @@ export class framework {
 
     async contest(options = {}){
         if(this.targets.size !== 1) return this.error('Please target one token')
-        this.contestData = await contest.runSkillContest(options.contestId ?? this.ruleset, this.source.token.actor.uuid, this.firstTarget.actor.uuid, options.overrides ?? {})
+        this.contestData = await contest.runSkillContest(options.contestId ?? this.ruleset, this.source.token.uuid, this.firstTarget.uuid, options.overrides ?? {})
     }
 
     convertToTokenDocument(inSet){
@@ -924,6 +924,12 @@ export class framework {
         }
     }
 
+    async recheckHits(){
+        await this.data.checkHits();
+        await this.data.displayAttackRoll(true);
+        await this.data.displayHits(false, true);
+    }
+
     async recurItemUse(maxTargets = 2, item = this.item){
         const targetSets = [];
         let remainingTargets = maxTargets - this.targets.size, more = true, warning = '';
@@ -1172,6 +1178,18 @@ export class framework {
         return after
     }
 
+    async updateMQItemCard({roll = this.roll, isAttack = false, isDamage = false}={}){
+        if(isAttack) {
+            this.data.attackTotal = roll._total
+            await this.data.setAttackRoll(roll)
+            await this.data.displayAttackRoll(true, { GMOnlyAttackRoll: true });
+        }
+        if(isDamage) {
+            await this.data.setDamageRoll(roll)
+            await this.data.displayDamageRoll(true)
+        }
+    }
+
     async updateSpellUse(amt, slot, {itemName = this.config.name, document = this.source.actor}={}){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
@@ -1331,7 +1349,7 @@ export class framework {
         ui.notifications.warn(message)
     }
 
-    async rerollReplace(origin, {keep = 'highest', isAttack = false} = {}){
+    async rerollReplace(origin, {keep = 'highest', isAttack = false, isDamage = false} = {}){
         const newRollResult = await this.rollDice('1d20', {toWorkflow: false})
         const currentDieIndex = origin.terms.findIndex(d => d.faces === 20)
         const currentDie = origin.terms[currentDieIndex]
@@ -1339,7 +1357,7 @@ export class framework {
             origin._total = origin._total - (currentDie.total - newRollResult.total)
             origin.terms[currentDieIndex] = newRollResult.terms[0]
             origin = Roll.fromTerms(origin.terms)
-            if(isAttack) this.data.attackTotal = origin.total
+            await this.updateMQItemCard({roll: origin, isAttack: isAttack, isDamage: isDamage})
         }
         return {origin: origin, new: newRollResult}
     }
@@ -1353,7 +1371,7 @@ export class framework {
         await term.evaluate()
         origin.terms = [numerator,operator, term]
         origin = Roll.fromTerms(origin.terms)
-        if(isAttack) this.data.attackTotal = origin.total
+        await this.updateMQItemCard({roll: origin, isAttack: isAttack, isDamage: isDamage})
         return origin
     }
 
@@ -1382,6 +1400,12 @@ export class workflow extends framework {
     async _initialize(){
         super._initializePre()
         switch(this.hook){
+            case 'midi-qol.preTargeting':
+                this.targets = this.convertToTokenDocument(game.user.targets);
+                this.item = this.data.item ?? {};
+                this.source.token = this.scene.getEmbeddedDocument("Token", this.data.tokenId);
+                this.source.actor = this.data.actor ?? {};
+                break
             case 'midi-qol.preItemRoll':
             case 'midi-qol.preambleComplete':
             case 'midi-qol.preAttackRoll':
@@ -1458,6 +1482,8 @@ export class workflow extends framework {
             case 'checkRoll':
                     this.source.actor = this.data.actor ?? {};
                     this.roll = this.data.roll;
+                break;
+            case 'napolitano.postContest':
                 break;
             default:
                     if(this.data.scene) this.scene = this.data.scene
@@ -1539,6 +1565,7 @@ export class workflow extends framework {
             case 'pan': flow._pan(); break;
             case 'passWithoutTrace': return flow._passWithoutTrace(); break;
             case 'powerSurge': flow._powerSurge(); break;
+            case 'produceFlame': flow._produceFlame(); break;
             case 'relentless': flow._relentless(); break;
             case 'relentlessEndurance': flow._relentlessEndurance(); break;
             case 'shortRest': flow._shortRest(); break;
@@ -1917,7 +1944,7 @@ export class workflow extends framework {
                         }
                         else {
                             const roll = await this.rollBardicInspiration({document: value.document})
-                            await this.appendRoll(rollSource, roll, {sign: -1, isAttack: false})
+                            await this.appendRoll(rollSource, roll, {sign: -1, isAttack: type === 'attack' ? true : false, isDamage: type === 'damage' ? true : false})
                             if(type !== 'ability') this.appendMessageMQ(`-${roll.total} to ${type} due to Cutting Words.`)
                             this.message(`${value.document.name} uses Cutting Words, reducing the ${type} roll of ${originalRollTotal} by ${roll.total}.`, {title: "Cutting Words"})    
                         }
@@ -2011,7 +2038,7 @@ export class workflow extends framework {
         if(this.hook === 'midi-qol.preDamageRollComplete'){
             if(!this.hasHitTargets) return
             if(this.hasItem({itemName: 'Eldritch Invocations: Agonizing Blast'})){
-                await this.appendRoll(this.data.damageRoll, false, {sign: 1, isAttack: false, mod: this.sourceData.charismaMod})
+                await this.appendRoll(this.data.damageRoll, false, {sign: 1, isDamage: true, mod: this.sourceData.charismaMod})
                 await this.appendMessageMQ(`+${this.sourceData.charismaMod} force damage from Agonizing Blast.`)
             }
         }
@@ -2441,7 +2468,7 @@ export class workflow extends framework {
                 if(value.yes){
                     const roll = await this.rollSuperiorityDie({document: value.document})
                     const mod = value.document.actor.system.abilities.dex.mod
-                    await this.appendRoll(this.data.damageRoll, roll, {sign: -1, isAttack: false, mod: mod})
+                    await this.appendRoll(this.data.damageRoll, roll, {sign: -1, isDamage: true, mod: mod})
                     const supItem = this.getItem('Superiority Dice', value.document);
                     this.message(`${value.document.name} uses Parry, reducing the damage dealt of ${originalRollTotal} by ${roll.total + mod}.`, {title: "Parry"})
                     this.appendMessageMQ(`-${roll.total + mod} to damage due to Parry.`)
@@ -2490,6 +2517,16 @@ export class workflow extends framework {
             this.appendMessageMQ(`+${sup.total} to attack roll due to Precision Attack.`)
             this.updateItemUses(-1, supItem)
             this.message(`Superiority Dice reduced by one on ${this.name}.`,{whisper: "GM"})
+        }
+    }
+
+    async _produceFlame(){
+        if(this.hasTargets){
+            if(this.firstTarget.id !== this.source.token.id && this.hasEffect()){
+                await this.deleteEffect()
+            }
+        } else {
+            if(!this.hasEffect()) await this.addActiveEffect({effectName: 'Produce Flame', origin: this.source.actor.uuid, uuid: this.source.actor.uuid})
         }
     }
 
@@ -2552,20 +2589,28 @@ export class workflow extends framework {
     } 
 
     async _silveryBarbs(){
-        let type, originalRollTotal, rollSource
+        let type, originalRollTotal, rollSource, success = true
         switch(this.hook){
-            case 'midi-qol.preAttackRollComplete':
+            case 'midi-qol.AttackRollComplete':
                 type = 'attack'
-                originalRollTotal = this.data.attackRoll?.terms[0]?.total ?? 0
                 rollSource = this.data.attackRoll
+                if(!this.hasHitTargets) success = false
+                break;
+            case 'napolitano.postContest':
+                type = 'ability check'
+                const winner = this.data.won ? this.data.source : this.data.target
+                rollSource = winner.roll
+                this.source.token = winner.token
+                this.source.actor = winner.actor
                 break;
             default:
-                type = this.hook === 'napolitano.postRollAbilityTest' ? 'ability check' : (this.hook === 'napolitano.postRollAbilitySave' ? 'saving throw' : 'skill' )
-                originalRollTotal = this.roll?.terms[0]?.total ?? 0
+                type = 'saving throw'
                 rollSource = this.roll
                 break;
         }
-        if(!rollSource.terms.find(d => d.faces === 20)) return
+        if(!rollSource?.terms?.[0] || !this.source.token?.id) return
+        originalRollTotal = rollSource.terms[0]?.total ?? 0
+        if(!success || !rollSource.terms.find(d => d.faces === 20)) return 
         const results = []
         for(const token of this.scene.tokens) {
             if(
@@ -2576,7 +2621,7 @@ export class workflow extends framework {
                 && this.getDistance(token, this.source.token) <= 60
             ){
                 let choices = this.getSpellOptions({document: token})
-                if(choices.length) results.push(this.choose(choices, `${token.name}, The ${type} roll is <span class="napolitano-label">${originalRollTotal}</span>. Cast Silvery Barbs?`, 'Silvery Barbs', {owner: getActorOwner(token), document: token, img: this.getItem("Silvery Barbs", token)?.img}))        
+                if(choices.length) results.push(this.choose(choices, `${token.name}, The creature's ${type} roll succeeds with a <span class="napolitano-label">${originalRollTotal}</span>. Cast Silvery Barbs?`, 'Silvery Barbs', {owner: getActorOwner(token), document: token, img: this.getItem("Silvery Barbs", token)?.img}))        
             }
         }
         if(results.length){
@@ -2592,6 +2637,9 @@ export class workflow extends framework {
                             this.message(`${value.document.name} casts Silvery Barbs at level ${updated.lvl}. They roll a ${result.new.terms[0]?.total} and ${result.new.terms[0]?.total < originalRollTotal ? 'replace' : 'keep'} the original roll of ${originalRollTotal}.`, {title: "Silvery Barbs"})
                             this.addActiveEffect({effectName: 'Reaction', uuid: value.document.actor.uuid, origin: value.document.actor.uuid})
                             adv.push(this.promptTarget({title: 'Silvery Barbs Advantage', origin: value.document.actor.uuid, owner: getActorOwner(value.document), event: 'Grant Silvery Barbs Advantage', prompt: `Select a target to grant advantage to on their next attack roll, saving throw or ability check.`}))
+                            if(type === 'attack'){
+                                await recheckHits();
+                            }
                         } else {
                             this.message(`${value.document.name} does not have any remaining uses at the ${value.choice} level.`, {title: "Silvery Barbs Not Cast"})
                         }    

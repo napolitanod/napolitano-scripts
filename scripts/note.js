@@ -37,12 +37,12 @@ export class note {
 
     static async recordChat(message) {
         const timeEnd = message.indexOf(']');
-        const journal = new log(message.slice(timeEnd+1))
+        const journal = new note(message.slice(timeEnd+1))
         await journal._record()
     }
 
     static async record(message){
-        const journal = new log(message)
+        const journal = new note(message)
         await journal._record()
     }
 

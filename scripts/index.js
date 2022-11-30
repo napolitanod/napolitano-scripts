@@ -136,7 +136,13 @@ Hooks.once("midi-qol.midiReady", () => {
             workflow.play('ancestralProtectors', data, {hook: hook});
         }
     });
-    
+    HOOKIDS['midi-qol.preTargeting'] = Hooks.on('midi-qol.preTargeting', async function(data){
+        const hook = "midi-qol.preTargeting", results = [];
+        switch(data.item?.name) {
+           case 'Produce Flame': workflow.play('produceFlame', data, {hook: hook}); break;
+        }
+    });
+
     HOOKIDS['midi-qol.preambleComplete'] = Hooks.on('midi-qol.preambleComplete', async function(data){
         const hook = "midi-qol.preambleComplete", results = [];
         if(data.templateId && game.settings.get("napolitano-scripts", "template-targeting")){
@@ -171,9 +177,6 @@ Hooks.once("midi-qol.midiReady", () => {
         if(game.settings.get("napolitano-scripts", "guided-strike")){
             results.push(workflow.playAsync('guidedStrike', data, {hook: hook}))
         }
-        if(game.settings.get("napolitano-scripts", "silvery-barbs")){
-            results.push(workflow.playAsync('silveryBarbs', data, {hook: hook}))
-        }
         await Promise.all(results)  
         if(game.settings.get("napolitano-scripts", "cutting-words")){
            await workflow.playAsync('cuttingWords', data, {hook: hook})
@@ -181,7 +184,11 @@ Hooks.once("midi-qol.midiReady", () => {
     });
 
     HOOKIDS['midi-qol.AttackRollComplete'] = Hooks.on('midi-qol.AttackRollComplete', async function(data){
-        const hook = "midi-qol.AttackRollComplete";
+        const hook = "midi-qol.AttackRollComplete", results = [];
+        if(game.settings.get("napolitano-scripts", "silvery-barbs")){
+            results.push(workflow.playAsync('silveryBarbs', data, {hook: hook}))
+        }
+        await Promise.all(results)
     });
 
     HOOKIDS['midi-qol.preDamageRollComplete'] = Hooks.on("midi-qol.preDamageRollComplete", async (data) => {

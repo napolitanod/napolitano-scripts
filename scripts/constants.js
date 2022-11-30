@@ -342,6 +342,12 @@ export const NAPOLITANOCONFIG = {
         name: "Lion",
         killIn: {hours: 1}
     },
+    figurineOfWonderousPowerObsidianSteed: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuffRing02_01_Dark_Black_400x400.webm', scale: 1.5}},
+        sounds: {pre: {file: 'modules/soundfxlibrary/Combat/Single/Spell%20Impact/spell-impact-2.mp3'}},
+        killIn: {days: 1},
+        name: "Nightmare"
+    },
     flamingSphere: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuffRing02_01_Regular_White_400x400.webm', scale: 1.5}},
         sounds: {pre: {file: 'modules/soundfxlibrary/Combat/Single/Spell%20Whoosh/spell-whoosh-2.mp3'}},
@@ -487,6 +493,9 @@ export const NAPOLITANOCONFIG = {
     },
     powerSurge: {
         name: "Power Surge"
+    },
+    produceFlame: {
+        name: "Produce Flame"
     },
     rayOfEnfeeblement: {
         name: "Ray of Enfeeblement"
