@@ -30,8 +30,8 @@
         "styles/napolitano-scripts.css"
     ],
     "title": "_Napolitano Scripts",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "url": "https://github.com/napolitanod/napolitano-scripts",
     "manifest": "https://raw.githubusercontent.com/napolitanod/napolitano-scripts/master/module.json",
-    "download": "https://github.com/napolitanod/napolitano-scripts/releases/download/1.0.13/module.zip"
+    "download": "https://github.com/napolitanod/napolitano-scripts/releases/download/1.0.14/module.zip"
 }

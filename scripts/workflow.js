@@ -937,7 +937,7 @@ export class framework {
         while(remainingTargets > 0 && more){
             const response = await this.yesNo({title: `${item.name} Targets`, time: 0, prompt: `${warning}${maxTargets - remainingTargets} targets acquired.<br>You have ${remainingTargets} targets left.<br>Choose your next target and select 'Yes'.`})
             if(response){
-                if(remainingTargets - game.user.targets.size){
+                if(remainingTargets - game.user.targets.size < 0){
                     warning = `You currently have too many targets selected on the canvas (${game.user.targets.size}).<br>`
                 } else {
                     warning = ''
