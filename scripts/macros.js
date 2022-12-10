@@ -79,6 +79,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'infuseItem': await macro._infuseItem(); break;
             case 'lungingAttack': await macro._lungingAttack(); break;
             case 'mageHand': await macro._mageHand(); break;
+            case 'magicalTinkering': await macro._magicalTinkering(); break;
             case 'moonbeam': await macro._moonbeam(); break;
             case 'nathairsMischief': await macro._nathairsMischief(); break;
             case 'naturalBargainer': await macro._naturalBargainer(); break;
@@ -1114,6 +1115,27 @@ game.napolitano.macros(args, 'createBonfire', options)
 
     async _mageHand(){//tested v10
         await this.summon();
+    }
+
+    async _magicalTinkering(){
+        const tinker = await this.choose(this.config.options, 'What ye be tinkering?', 'Magical Tinkering', {owner: this.sourceData.owner, img: this.item.img})
+        switch(tinker){
+            case `Light: External Object`:
+                await dangerZone.triggerZone('Magical Tinkering: Imbue Light')
+                break;
+            case 'Light: On Self':
+                await this.addActiveEffect({effectName: 'Magical Tinkering: Imbue Light', uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
+                break;
+            case 'Light: On Target': 
+                this.hasTargets ? await this.addActiveEffect({effectName: 'Magical Tinkering: Imbue Light', uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid}) : this.warning('You must target a token first if imbuing a light on a target.')
+                break;
+            case 'Other: External Object':
+                await dangerZone.triggerZone('Magical Tinkering: Imbue Object')
+                break;
+            default:
+                this.info('Roleplay the effects and take notes on items/journal as applicable.')
+        }
+        this.message(`${this.name} uses magical tinkering and imbues ${tinker}` , {title: 'Magical Tinkering'})
     }
 
     async _moonbeam(){//tested v10

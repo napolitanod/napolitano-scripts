@@ -139,7 +139,8 @@ Hooks.once("midi-qol.midiReady", () => {
     HOOKIDS['midi-qol.preTargeting'] = Hooks.on('midi-qol.preTargeting', async function(data){
         const hook = "midi-qol.preTargeting", results = [];
         switch(data.item?.name) {
-           case 'Produce Flame': workflow.play('produceFlame', data, {hook: hook}); break;
+            case 'Arcane Firearm': workflow.playAsync('arcaneFirearm', data, {hook: hook}); break;
+            case 'Produce Flame': workflow.play('produceFlame', data, {hook: hook}); break;
         }
     });
 
@@ -198,9 +199,9 @@ Hooks.once("midi-qol.midiReady", () => {
              case 'Eldritch Blast': workflow.playAsync('eldritchBlast', data, {hook: hook}); break;
         }
 
+        if(game.settings.get("napolitano-scripts", "arcane-firearm")) results.push(workflow.playAsync('arcaneFirearm', data, {hook: hook}))
         //wraps damage, do last
         if(game.settings.get("napolitano-scripts", "rayOfEnfeeblement")) results.push(workflow.playAsync('rayOfEnfeeblement', data, {hook: hook}))
-                
         if(game.settings.get("napolitano-scripts", "cutting-words")) results.push(workflow.playAsync('cuttingWords', data, {hook: hook}))
         if(game.settings.get("napolitano-scripts", "parry")) results.push(workflow.playAsync('parry', data, {hook: hook}))
         
