@@ -61,6 +61,8 @@ export const FAMILIARTYPES = ['Fey', 'Fiend', 'Celestial'];
 
 export const INCAPACITATEDCONDITIONS = ['Incapacitated', 'Dead', 'Unconscious'];
 
+export const MULTIPLEDAMAGEROLLSPELLS = ['Eldritch Blast','Scorching Ray']
+
 export const SIZES = {
     grg: 5,
     huge: 4,
@@ -136,6 +138,9 @@ export const NAPOLITANOCONFIG = {
         sounds: {pre: {file:'modules/soundfxlibrary/Combat/Single/Spell%20Impact/spell-impact-2.mp3'}},
         options: [`Bones`, 'Corpse'],
         prompt: `Are you animating Bones or a Corpse?`
+    },
+    arcaneFirearm: {
+        name: "Arcane Firearm"
     },
     armorOfAgathys: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Ice/SnowflakeBurst_01_Regular_TealYellow_Loop_600x600.webm', fadeOut: 500, scale: 0.5, wait: 100}},
@@ -457,6 +462,10 @@ export const NAPOLITANOCONFIG = {
         killIn: {minutes: 1},
         name: "Mage Hand"
     },
+    magicalTinkering: {
+        name: "Magical Tinkering",
+        options: [`Light: External Object`, 'Light: On Self', 'Light: On Target', 'Other: External Object', 'Other'],
+    },
     moonbeam: {
         killIn: {minutes: 1},
         name: "Moonbeam"
@@ -697,6 +706,7 @@ export const CONFIGS = [
     {id:"long-rest", name:"Long Rest"},
     {id:"short-rest", name:"Short Rest"},
     {id:"ancestral-protectors", name:"Ancestral Protectors"},
+    {id:"arcane-firearm", name:"Arcane Firearm"},
     {id:"armor-of-agathys", name:"Armor of Agathys"},
     {id:"blessed-strikes", name:"Blessed Strikes"},
     {id:"chardalyn", name:"Chardalyn"},

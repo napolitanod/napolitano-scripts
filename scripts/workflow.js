@@ -1,6 +1,6 @@
 import {napolitano} from "./napolitano-scripts.js";
 import {importActorIfNotExists, chat, choose, getActorOwner, promptTarget, getSpellData, isOwner, requestSkillCheck, useItem, wait, yesNo} from "./helpers.js";
-import {EVIL, INCAPACITATEDCONDITIONS, NAPOLITANOCONFIG, PCS, TEMPLATEMODIFICATION} from "./constants.js";
+import {EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, TEMPLATEMODIFICATION} from "./constants.js";
 import {napolitanoScriptsSocket} from "./index.js";
 import {macros} from "./macros.js";
 import {contest} from './contest.js';
@@ -222,8 +222,10 @@ export class framework {
         return {
             baseSpellLevel: this.item.system.level,
             damageParts: this.item.system.damage?.parts ?? [],
+            damageType: this.item.system.damage?.parts?.[0]?.[1],
             dc: this.item.system.save.dc,
             isAttack: ["mwak","rwak","msak","rsak"].includes(this.item.system.actionType) ? true : false,
+            isDamage: game.dnd5e.config.damageTypes[this.item.system.damage?.parts?.[0]?.[1]] ? true : false,
             isMeleeAttack: ["mwak","msak"].includes(this.item.system.actionType) ? true : false,
             isMeleeWeaponAttack: this.item.system.actionType ==="mwak" ? true : false,
             isRangedAttack: ["rwak","rsak"].includes(this.item.system.actionType) ? true : false,
@@ -262,6 +264,7 @@ export class framework {
     get sourceData(){
         if(!this.source.actor) return {}
         return {
+            arcaneFirearm: this.source.actor.items.filter(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.arcaneFirearm?.selected),
             artificerTools: this.source.actor.items.filter(i => i.flags?.['napolitano-scripts']?.rightToolForTheJob),
             artificerLevel: this.source.actor.classes.artificer?.system?.levels ?? 0,
             charismaMod: this.source.actor.system.abilities.cha.mod,
@@ -1503,6 +1506,7 @@ export class workflow extends framework {
         const flow = new workflow(ruleset, data, options)
         flow._initialize()
         switch(ruleset){
+            case 'arcaneFirearm': await flow._arcaneFirearm(); break;
             case 'counterspell': await flow._counterspell(); break;
             case 'cuttingWords': await flow._cuttingWords(); break;
             case 'eldritchBlast': await flow._eldritchBlast(); break;
@@ -1623,6 +1627,46 @@ export class workflow extends framework {
             this.message( `${this.name} animates ${choice === 'Bones' ? 'a pile of bones' : 'a corpse'} and a ${undead} rises!`, 'Animate Dead')
         }
     }
+
+    /**
+     * Tested: v10
+     * Adds the Hex Warrior Weapon setting from the character
+     */
+     async _arcaneFirearm(){
+        if(this.hook === 'midi-qol.preDamageRollComplete'){
+            if(this.itemData.isSpell && this.itemData.isDamage && this.sourceData.arcaneFirearm.length) {
+                if( MULTIPLEDAMAGEROLLSPELLS.includes(this.item.name)) {
+                    if(this.hasHitTargets) this.info(`${this.item.name} rolls multiple damage rolls, roll Arcane Firearm damage separately after spell completes and decide on which target to it applies to.`)
+                    return
+                }
+                const roll = await this.rollDice('1d8')
+                await this.appendRoll(this.data.damageRoll, roll, {sign: 1, isDamage: true})
+                this.appendMessageMQ(`+${roll.total} ${this.itemData.damageType} damage due to Arcane Firearm.`)
+            }
+        } else {
+            if(this.sourceData.arcaneFirearm.length) {
+                this.message(`Arcene firearm benefit has expired from ${this.sourceData.arcaneFirearm.map(i => i.name).join(', ')} for ${this.name} following a long rest.`, {title: 'Arcane Firearm Expired'})
+                for(const item of this.sourceData.arcaneFirearm){
+                    await this.updateItem( {flags: {[napolitano.FLAGS.NAPOLITANO]: {arcaneFirearm: {selected: false}}}}, item)
+                }
+            }
+            this.setItem()
+            if(this.hasItem()){
+                const items = this.source.actor.items.filter(i => i.name.includes('wand') || i.name.includes('staff') || i.name.includes('rod'))
+                if(items.length) {
+                    const choice = await this.choose(items.map(i => [i.id, i.name]), 'Pick Arcane Firearm')
+                    const changeItem = items.find(i => i.id === choice)
+                    if(changeItem){
+                        await this.updateItem( {flags: {[napolitano.FLAGS.NAPOLITANO]: {arcaneFirearm: {selected: true}}}}, changeItem)
+                        this.message(`Arcane Firearm benefit added to ${changeItem.name} for ${this.name} following a long rest.`, {title: 'Arcane Firearm'})
+                        }
+                    } else {
+                    this.warn(`${this.name} has no rod, staff or wand that can be assigned with Arcane Firearm at end of long rest.`)
+                }
+            }
+        }
+    }
+
 
     /**
      * Tested: v10
@@ -2333,6 +2377,7 @@ export class workflow extends framework {
      */
     async _longRest() {
         await this._removeInfusions();
+        await workflow.playAsync('arcaneFirearm', this.data, {hook: this.hook})
         await this._hexWarriorWeapon();
         await this._powerSurge();
     } 
@@ -2574,7 +2619,7 @@ export class workflow extends framework {
     async _removeInfusions(){
         if (this.sourceData.experimentalElixirs.length) {
             this.message(`${this.sourceData.experimentalElixirs.map(i => i.name).join(', ')} has been deleted from ${this.source.actor.name} following a long rest.`, {title: 'Artificer Infusions Expired'})
-            await actor.deleteEmbeddedDocuments('Item', this.sourceData.experimentalElixirs.map(i => i.id));
+            await this.source.actor.deleteEmbeddedDocuments('Item', this.sourceData.experimentalElixirs.map(i => i.id));
         }
     }
 
