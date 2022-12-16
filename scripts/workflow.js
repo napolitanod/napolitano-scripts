@@ -1552,6 +1552,7 @@ export class workflow extends framework {
             case 'grease': flow._grease(); break;
             case 'greenFlameBlade': flow._greenFlameBlade(); break;
             case 'haloOfSpores': flow._haloOfSpores(); break;
+            case 'heatedBody': flow._heatedBody(); break;
             case 'hex': flow._hex(); break;
             case 'hexbladesCurse': flow._hexbladesCurse(); break;
             case 'hungryJaws': flow._hungryJaws(); break;
@@ -2246,6 +2247,26 @@ export class workflow extends framework {
             const text = result.success ? `${this.firstHitTarget.name} succeeds their saving throw and avoids the noxious spores!` : `${this.firstHitTarget.name} sustains ${this.damageData.roll.result} damage from halo of spores on a ${this.damageData.roll.formula} roll!`
             this.message(text, {title: 'Halo of Spores'})
             this.addActiveEffect({effectName: 'Reaction', uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
+        }
+    }
+
+    /**
+ * Tested: v10
+ * Checks for presence of AoA and hit, executes damage back to attacker
+ * @returns 
+ */
+    async _heatedBody(){
+        if(this.hasHitTargets && this.itemData.isMeleeWeaponAttack){
+            this.hitTargets.forEach((value) => { 
+                if (value.actor && this.hasItem({document: value.actor}) && this.getDistance(value, this.source.token) <= 5){
+                    const item = this.getItem(this.config.name, value.actor)
+                    if(item) {
+                        const parts = item.system?.damage?.parts
+                        this.damage({type: parts[0][1], targets: [this.source.token], dice: parts[0][0], flavor: `${this.name} takes damage from the target's heated body!`, itemData: item})
+                        this.generateEffect(this.source.token)
+                    }                    
+                }
+            })
         }
     }
 
