@@ -219,6 +219,9 @@ Hooks.once("midi-qol.midiReady", () => {
         if(game.settings.get("napolitano-scripts", "ancestral-protectors")){
             workflow.play('ancestralProtectors', data, {hook: hook})
         }
+        if(data.item?.name !== "Heated Body" && game.settings.get("napolitano-scripts", "heated-body")){
+            workflow.play('heatedBody', data, {hook: hook})
+        }
         if(data.item?.name !== "Necrotic Shroud" && game.settings.get("napolitano-scripts", "necrotic-shroud")){
             workflow.play('necroticShroud', data, {hook: hook})
         }

@@ -37,6 +37,8 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'bendLuck': await macro._bendLuck(); break;
             case 'bigbysHand': await macro._bigbysHand(); break;
             case 'blight': await macro._blight(); break;
+            case 'blindnessDeafness': await macro._blindnessDeafness(); break;
+            case 'channelDivinityInvokeDuplicity': await macro._channelDivinityInvokeDuplicity(); break;
             case 'chromaticOrb': await macro._chromaticOrb(); break;
             case 'climbUpon': await macro._climbUpon(); break;
             case 'cloudOfDaggers': await macro._cloudOfDaggers(); break;
@@ -289,6 +291,23 @@ game.napolitano.macros(args, 'createBonfire', options)
         const saveRoll = await this.firstTarget.actor.rollAbilitySave("con", {flavor: `${CONFIG.DND5E.abilities["con"]} DC ${this.sourceData.spelldc} Blight`, fastforward: true, disadvantage: type==='plant' ? true : false })   
         if (["undead", "construct"].includes(type)) return this.message(`${this.firstTarget.name} resists the blight because they are a ${type}`, {title: 'Blight Resisted', whisper: "GM"});
         await this.damage({type: "necrotic", targets: [this.firstTarget], half: saveRoll.total >= this.sourceData.spelldc ? true : false})
+    }
+
+    async _blindnessDeafness(){
+        if(this.feature.dae!=='on' || !this.hasTargets) return 
+        const choice = await this.choose(['Blind', 'Deafen'], 'Choose to blind or deafen', 'Blindness/Deafness', {owner: this.sourceData.owner, img: this.item.img})
+        if(choice) await this.addActiveEffect({effectName: `${choice}ed Spell`, uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid})
+    }
+
+    async _channelDivinityInvokeDuplicity(){
+        this.summonData.updates = {
+            token: {
+                texture: {
+                    src: this.source.token.texture.src
+                }
+            }
+        }
+        await this.summon();
     }
 
     async _cloudOfDaggers(){

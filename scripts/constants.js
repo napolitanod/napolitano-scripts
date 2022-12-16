@@ -193,6 +193,10 @@ export const NAPOLITANOCONFIG = {
         },
         name: "Blight"
     },
+    channelDivinityInvokeDuplicity: {
+        killIn: {minutes: 1},
+        name: "Illusion"
+    },
     chardalyn: {
         effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Conditions/Dizzy_Stars/DizzyStars_01_Black_400x400.webm', scale: 1}},
         saying: {
@@ -410,6 +414,10 @@ export const NAPOLITANOCONFIG = {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/3rd_Level/Spirit_Guardians/SpiritGuardiansParticles_01_Light_PinkPurple_600x600.webm', scale: 1}},
         killIn: {minutes: 1},
         name: "Healing Spirit"
+    },
+    heatedBody: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Explosion/Explosion_05_Dark_Orange_400x400.webm', fadeOut: 500, scale: 0.5, wait: 100}},
+        name: "Heated Body"
     },
     hex: {
         effects: {pre: {file: "modules/jb2a_patreon/Library/Generic/Magic_Signs/Runes/NecromancyRuneLoop_01_Regular_Green_400x400.webm"}},
@@ -718,6 +726,7 @@ export const CONFIGS = [
     {id:"form-of-dread", name:"Form of Dread"},
     {id:"green-flame-blade", name:"Green Flame Blade"},
     {id:"guided-strike", name:"Guided Strike"},
+    {id:"heated-body", name:"Heated Body"},
     {id:"hex", name:"Hex"},
     {id:"hexblades-curse", name:"Hexblade's Curse"},
     {id:"hungry-jaws", name:"Hungry Jaws"},
