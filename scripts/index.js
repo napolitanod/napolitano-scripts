@@ -196,9 +196,10 @@ Hooks.once("midi-qol.midiReady", () => {
         const hook = "midi-qol.preDamageRollComplete", results = [];
 
         switch(data.item?.name){
-             case 'Eldritch Blast': workflow.playAsync('eldritchBlast', data, {hook: hook}); break;
+             case 'Eldritch Blast': results.push(workflow.playAsync('eldritchBlast', data, {hook: hook})); break;
         }
 
+        if(game.settings.get("napolitano-scripts", "potent-spellcasting")) results.push(workflow.playAsync('potentSpellcasting', data, {hook: hook}))
         if(game.settings.get("napolitano-scripts", "arcane-firearm")) results.push(workflow.playAsync('arcaneFirearm', data, {hook: hook}))
         //wraps damage, do last
         if(game.settings.get("napolitano-scripts", "rayOfEnfeeblement")) results.push(workflow.playAsync('rayOfEnfeeblement', data, {hook: hook}))
