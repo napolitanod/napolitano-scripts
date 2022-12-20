@@ -1513,6 +1513,7 @@ export class workflow extends framework {
             case 'guidedStrike': await flow._guidedStrike(); break;
             case 'magicMissile': await flow._magicMissile(); break;
             case 'parry': await flow._parry(); break;
+            case 'potentSpellcasting': await flow._potentSpellcasting(); break;
             case 'precisionAttack': await flow._precisionAttack(); break;
             case 'rayOfEnfeeblement': await flow._rayOfEnfeeblement(); break;
             case 'scorchingRay': await flow._scorchingRay(); break;
@@ -1568,7 +1569,7 @@ export class workflow extends framework {
             case 'necroticShroud': flow._necroticShroud(); break;
             case 'packTactics': flow._packTactics(); break;
             case 'pan': flow._pan(); break;
-            case 'passWithoutTrace': return flow._passWithoutTrace(); break;
+            case 'passWithoutTrace': flow._passWithoutTrace(); break;
             case 'powerSurge': flow._powerSurge(); break;
             case 'produceFlame': flow._produceFlame(); break;
             case 'relentless': flow._relentless(); break;
@@ -2555,6 +2556,13 @@ export class workflow extends framework {
             this.message(`${this.name} gains a +10 bonus to their stealth roll due to Pass without Trace effect from ${bud.name}`, {title: 'Pass without Trace'})
         }
         return this.data.roll
+    }
+
+    async _potentSpellcasting(){
+        if(!this.hasItem() || !this.hasHitTargets || !this.damageTotal || !this.source.actor.id || !this.item.id || !(this.itemData.isSpell && this.itemData.baseSpellLevel === 0)) return
+        await this.appendRoll(this.data.damageRoll, false, {sign: 1, isDamage: true, mod: this.sourceData.wisdomMod})
+        await this.appendMessageMQ(`+${this.sourceData.wisdomMod} additional damage from Potent Spellcasting.`)
+        this.generateEffect(this.firstTarget)
     }
 
     async _powerSurge(){

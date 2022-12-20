@@ -75,6 +75,7 @@ export const SIZES = {
 export const TEMPLATEMODIFICATION = [
     {name: 'Countercharm', foe: false, friendly: true, removeSelf: false},
     {name: 'Channel Divinity: Radiance of the Dawn', foe: true, friendly: false, removeSelf: true},
+    {name: 'Frightful Cackle', foe: true, friendly: false, removeSelf: true},
     {name: 'Mass Healing Word', foe: false, friendly: true, removeSelf: false},
     {name: 'Necrotic Shroud', foe: true, friendly: true, removeSelf: true},
     {name: 'Protector', foe: false, friendly: true, removeSelf: false},
@@ -508,6 +509,10 @@ export const NAPOLITANOCONFIG = {
         name: "Pass without Trace",
         effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuff01_03_Regular_Grey_400x400.webm', scale: 1}}
     },
+    potentSpellcasting: {
+        effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Explosion/Explosion_03_Regular_GreenOrange_400x400.webm', scale: 1, wait: 100}},
+        name: "Potent Spellcasting"
+    },
     powerSurge: {
         name: "Power Surge"
     },
@@ -736,6 +741,7 @@ export const CONFIGS = [
     {id:"necrotic-shroud", name:"Necrotic Shroud"},
     {id:"pack-tactics", name:"Pack Tactics"},
     {id:"parry", name:"Parry"},
+    {id:"potent-spellcasting", name:"Potent Spellcasting"},
     {id:"precision-attack", name:"Precision Attack"},
     {id:"rayOfEnfeeblement", name: "Ray of Enfeeblement"},
     {id:"relentless", name:"Relentless"},
