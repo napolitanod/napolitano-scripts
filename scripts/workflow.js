@@ -2423,8 +2423,17 @@ export class workflow extends framework {
 
     async _magicMissile(){
         if(!this.item.name === 'Magic Missile') return
-        const maxTargets = 3 + this.upcastAmount
-        await this.recurItemUse(maxTargets)
+        if(!this.data.options?.notCast && this.hook === 'midi-qol.preambleComplete'){
+            const maxTargets = 3 + this.upcastAmount
+            await this.recurItemUse(maxTargets)
+        } 
+        if(this.data.options?.notCast && this.hook === 'midi-qol.DamageRollComplete'){
+            if(this.hasEffect(this.firstTarget, 'Shield') && this.data.damageDetail.length) {
+                this.appendMessageMQ(`The shield blocks the magic missile.`)
+                this.data.damageDetail[0].damage = 0
+                this.generateEffect(this.firstTarget, {effect: NAPOLITANOCONFIG.shield.effects.pre})
+            }
+        }
     }
 
     async _melfsAcidArrow(){

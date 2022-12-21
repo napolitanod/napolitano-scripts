@@ -236,7 +236,8 @@ Hooks.once("midi-qol.midiReady", () => {
             workflow.play('disarmingAttack', data, {hook: hook}); 
         }
         switch(data.item?.name){
-             case 'Hungry Jaws': if(game.settings.get("napolitano-scripts", "hungry-jaws")) workflow.play('hungryJaws', data, {hook: hook}); break;
+            case 'Hungry Jaws': if(game.settings.get("napolitano-scripts", "hungry-jaws")) workflow.play('hungryJaws', data, {hook: hook}); break;
+            case 'Magic Missile': if(data.options?.notCast) await workflow.playAsync('magicMissile', data, {hook: hook}); break;
         }
      });
      

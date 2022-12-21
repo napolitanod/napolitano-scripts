@@ -541,6 +541,10 @@ export const NAPOLITANOCONFIG = {
         sounds: {pre: {file:'modules/soundfxlibrary/Combat/Single/Spell%20Impact/spell-impact-2.mp3'}},
         name: "Shadow Tattoo"
     },
+    shield: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/1st_Level/Shield/Shield_01_Regular_Blue_Complete_400x400.webm', scale: 1.5}},
+        name: "Shield"
+    },
     shoveBack: {
         name: "Shove Away"
     },
