@@ -194,6 +194,19 @@ export const NAPOLITANOCONFIG = {
         },
         name: "Blight"
     },
+    boomingBlade: {
+        name: "Booming Blade",
+        effects: {
+            pre: {
+                file: 'modules/jb2a_patreon/Library/1st_Level/Thunderwave/Thunderwave_01_Bright_Green_Center_600x600.webm'
+            }
+        },
+        sounds: {
+            pre: {
+                file: 'modules/SoundBoard-BlitzFreePack/bundledAudio/Misc/Thunder-Crash/thunder_mountainous_big_crack_02.wav'
+            }
+        },
+    },
     channelDivinityInvokeDuplicity: {
         killIn: {minutes: 1},
         name: "Illusion"
@@ -466,6 +479,11 @@ export const NAPOLITANOCONFIG = {
     layOnHands: {
         name: "Lay on Hands"
     },
+    lesserRestoration: {
+        effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Healing/HealingAbility_02_Regular_TealYellow_Burst_600x600.webm', scale: 1}},
+        name: 'Lesser Restoration',
+        options: ['Blinded', 'Deafened', 'Paralyzed', 'Poisoned']
+    },
     mageHand: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuff01_01_Regular_Blue_400x400.webm', scale: 1.25}},
         killIn: {minutes: 1},
@@ -540,6 +558,10 @@ export const NAPOLITANOCONFIG = {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuffRing02_01_Dark_Black_400x400.webm', scale: 1.5}},
         sounds: {pre: {file:'modules/soundfxlibrary/Combat/Single/Spell%20Impact/spell-impact-2.mp3'}},
         name: "Shadow Tattoo"
+    },
+    shield: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/1st_Level/Shield/Shield_01_Regular_Blue_Complete_400x400.webm', scale: 1.5}},
+        name: "Shield"
     },
     shoveBack: {
         name: "Shove Away"
@@ -746,6 +768,7 @@ export const CONFIGS = [
     {id:"rayOfEnfeeblement", name: "Ray of Enfeeblement"},
     {id:"relentless", name:"Relentless"},
     {id:"relentless-endurance", name:"Relentless Endurence"},
+    {id:"shield", name:"Shield (spell)"},
     {id:"silvery-barbs", name:"Silvery Barbs"},
     {id:"taste-of-the-stones", name:"Taste of the Stones"},
     {id:"warding-flare", name:"Warding Flare"},
