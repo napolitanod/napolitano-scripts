@@ -38,6 +38,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'bigbysHand': await macro._bigbysHand(); break;
             case 'blight': await macro._blight(); break;
             case 'blindnessDeafness': await macro._blindnessDeafness(); break;
+            case 'boomingBlade': await macro._boomingBlade(); break;
             case 'channelDivinityInvokeDuplicity': await macro._channelDivinityInvokeDuplicity(); break;
             case 'chromaticOrb': await macro._chromaticOrb(); break;
             case 'climbUpon': await macro._climbUpon(); break;
@@ -79,6 +80,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'hide': await macro._hide(); break;
             case 'iceKnife': await macro._iceKnife(); break;
             case 'infuseItem': await macro._infuseItem(); break;
+            case 'lesserRestoration': await macro._lesserRestoration(); break;
             case 'lungingAttack': await macro._lungingAttack(); break;
             case 'mageHand': await macro._mageHand(); break;
             case 'magicalTinkering': await macro._magicalTinkering(); break;
@@ -297,6 +299,18 @@ game.napolitano.macros(args, 'createBonfire', options)
         if(this.feature.dae!=='on' || !this.hasTargets) return 
         const choice = await this.choose(['Blind', 'Deafen'], 'Choose to blind or deafen', 'Blindness/Deafness', {owner: this.sourceData.owner, img: this.item.img})
         if(choice) await this.addActiveEffect({effectName: `${choice}ed Spell`, uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid})
+    }
+
+    async _boomingBlade(){
+        const weapons = this.source.actor.items.filter(i => i.type === 'weapon' && i.system.actionType === 'mwak')
+        const choice = await this.choose(weapons.map(w => [w.id, w.name]), 'Choose the weapon to make the booming blade attack with.', `${this.name} choose weapon`)
+        const item = weapons.find(w => w.id === choice)
+        let result
+        if(item) result = await this.useItem(item)
+        if(result.hitTargets.size){
+            const target = result.hitTargets.values().next().value
+            await this.addActiveEffect({effectName: 'Booming Blade', uuid: target.actor.uuid, origin: this.source.actor.uuid})
+        }
     }
 
     async _channelDivinityInvokeDuplicity(){
@@ -1120,6 +1134,16 @@ game.napolitano.macros(args, 'createBonfire', options)
             default: "yes" 
         }).render(true);
     } 
+
+    async _lesserRestoration(){
+        if(!this.hasTargets) return this.warn('You must first target a token.')
+        const choice = await this.choose(this.config.options, 'Choose the condition to remove.', this.name, {img: this.item.img})
+        if(choice) {
+            await this.deleteEffect(this.firstTarget, choice)
+            this.generateEffect(this.firstTarget)
+            this.message(`${choice} was removed from ${this.firstTarget.name} if present.`)
+        }
+    }
     
     async _lungingAttack(){
         this.message(`${this.name} lunges at their opponent!`, {title: 'Lunging Attack Initiated'})

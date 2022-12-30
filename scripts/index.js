@@ -154,7 +154,13 @@ Hooks.once("midi-qol.midiReady", () => {
             case 'Magic Missile': if(!data.options?.notCast) results.push(workflow.playAsync('magicMissile', data, {hook: hook})); break;
             case 'Scorching Ray': if(!data.options?.notCast) results.push(workflow.playAsync('scorchingRay', data, {hook: hook})); break;
         }
-        await Promise.all(results)  
+        await Promise.all(results) 
+        
+        results.length = 0;
+        switch(data.item?.name) {
+            case 'Magic Missile': results.push(workflow.playAsync('shield', data, {hook: hook})); break;
+         }
+        await Promise.all(results) 
     });
 
     HOOKIDS['midi-qol.preAttackRoll'] = Hooks.on('midi-qol.preAttackRoll', async function(data){
@@ -186,9 +192,8 @@ Hooks.once("midi-qol.midiReady", () => {
 
     HOOKIDS['midi-qol.AttackRollComplete'] = Hooks.on('midi-qol.AttackRollComplete', async function(data){
         const hook = "midi-qol.AttackRollComplete", results = [];
-        if(game.settings.get("napolitano-scripts", "silvery-barbs")){
-            results.push(workflow.playAsync('silveryBarbs', data, {hook: hook}))
-        }
+        if(game.settings.get("napolitano-scripts", "silvery-barbs")) results.push(workflow.playAsync('silveryBarbs', data, {hook: hook}))
+        if(game.settings.get("napolitano-scripts", "shield")) results.push(workflow.playAsync('shield', data, {hook: hook}))
         await Promise.all(results)
     });
 
@@ -347,6 +352,7 @@ HOOKIDS['preUpdateToken'] = Hooks.on("preUpdateToken", async (token, update, opt
 HOOKIDS['updateToken'] = Hooks.on("updateToken", async (token, update, options, id) => {
     if (game.user.isGM && ("x" in update || "y" in update || "elevation" in update) && options[`${napolitano.FLAGS.NAPOLITANO}`]) {
         workflow.play('tokenMovement', token, {hook: 'updateToken', moveData: options[`${napolitano.FLAGS.NAPOLITANO}`], update: update});
+        workflow.play('boomingBlade', token, {hook: 'updateToken', moveData: options[`${napolitano.FLAGS.NAPOLITANO}`], update: update})
     }
 });
 

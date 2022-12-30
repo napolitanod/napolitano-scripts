@@ -1,6 +1,6 @@
 import {napolitano} from "./napolitano-scripts.js";
 import {importActorIfNotExists, chat, choose, getActorOwner, promptTarget, getSpellData, isOwner, requestSkillCheck, useItem, wait, yesNo} from "./helpers.js";
-import {EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, TEMPLATEMODIFICATION} from "./constants.js";
+import {CONFIGS, EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, TEMPLATEMODIFICATION} from "./constants.js";
 import {napolitanoScriptsSocket} from "./index.js";
 import {macros} from "./macros.js";
 import {contest} from './contest.js';
@@ -138,10 +138,7 @@ export class framework {
     }
 
     get cantripScale(){
-        if(this.sourceData.level >= 17) return 4
-        if(this.sourceData.level >= 11) return 3
-        if(this.sourceData.level >= 5) return 2
-        return 1
+        return this.getCantripScale(this.sourceData.level )
     }
 
     get currentCombatant(){
@@ -278,7 +275,7 @@ export class framework {
             isConcentrating: this.hasEffect(this.source.actor, 'Concentrating'),
             isEvil: EVIL.includes(this.source.actor.system.details.alignment),
             isRaging: this.hasEffect(this.source.actor, 'Rage'),
-            level: this.source.actor.type === "character" ? this.source.actor.system.details.level : this.source.actor.system.details.spellLevel, 
+            level: this.getLevel(), 
             maxHp: this.source.actor.system.attributes.hp.max,
             owner: getActorOwner(this.source.actor),
             prof: this.source.actor.system.attributes.prof ?? 0,
@@ -674,6 +671,13 @@ export class framework {
         return actor.system?.details.type?.value 
     }
 
+    getCantripScale(level = this.sourceData.level){
+        if(level >= 17) return 4
+        if(level >= 11) return 3
+        if(level >= 5) return 2
+        return 1
+    }
+
     getCR(document = this.source.actor){
         return (document.actor ? document.actor.system?.details?.cr : document.system?.details?.cr) ?? 0
     }  
@@ -695,10 +699,10 @@ export class framework {
     }
 
     //item id or name
-    getItem(item = this.config.name, document = this.source.actor){
+    getItem(item = this.config.name, document = this.source.actor, options = {}){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
-        return actor.items?.find(e => e.id === item || e.name === item)
+        return actor.items?.find(e => (e.id === item || e.name === item) && (!options.type || e.type === options.type))
     }
 
     async getItemFromCompendium(itemName = this.config?.item?.name){
@@ -717,6 +721,12 @@ export class framework {
 
     getItemUsesRemaining(item){
         return item.system.uses?.value ?? 0
+    }
+
+    getLevel(document = this.source.actor){
+        const actor = document.actor ?? document
+        if(!this.isActor(actor)) return
+        return actor.type === "character" ? actor.system.details.level : actor.system.details.spellLevel
     }
 
     getLinkedTokenFromScene(actor = this.source.actor, scene = this.scene){
@@ -806,7 +816,7 @@ export class framework {
     //item id or name
     hasItem({itemName = this.config.name, document = this.source.actor, options = {}} = {}){
         let has = true
-        const item = this.getItem(itemName, document)
+        const item = this.getItem(itemName, document, options)
         if(!item || (options.uses && !item.system.uses.value && item.system.uses.max)) has = false
         return has
     }
@@ -896,7 +906,7 @@ export class framework {
     isResponsive(document = this.source.actor){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
-        return actor.effects.find(e => !e.disabled && !INCAPACITATEDCONDITIONS.includes(e.label)) ? true : false
+        return actor.effects.find(e => !e.disabled && INCAPACITATEDCONDITIONS.includes(e.label)) ? false : true
     } 
 
     async killIn(tokens, time){
@@ -1517,6 +1527,7 @@ export class workflow extends framework {
             case 'precisionAttack': await flow._precisionAttack(); break;
             case 'rayOfEnfeeblement': await flow._rayOfEnfeeblement(); break;
             case 'scorchingRay': await flow._scorchingRay(); break;
+            case 'shield': await flow._shield(); break;
             case 'silveryBarbs': await flow._silveryBarbs(); break;
             case 'wardingFlare': await flow._wardingFlare(); break;
         }
@@ -1532,6 +1543,7 @@ export class workflow extends framework {
             case 'armorOfAgathys': flow._armorOfAgathys(); break;
             case 'auraOfVitality': flow._auraOfVitality(); break;
             case 'blessedStrikes': flow._blessedStrikes(); break;
+            case 'boomingBlade': flow._boomingBlade(); break;
             case 'chardalyn': flow._chardalyn(); break;
             case 'checkRoll': flow._checkRoll(); break;
             case 'clearCombatantReactions': flow._clearCombatantReactions(); break;
@@ -1768,6 +1780,21 @@ export class workflow extends framework {
                 await this.setFlag(this.source.actor, {'blessedStrikes': this.now})
                 await this.damage({type: 'radiant', targets: [this.firstTarget], show: false, itemData: this.getItem(), itemCardId: "new"})
                 this.generateEffect(this.firstTarget)
+            }
+        }
+    }
+
+    async _boomingBlade(){
+        if(this.hasEffect(this.source.actor, 'Booming Blade')){
+            let eff = this.getEffect(this.source.actor, "Booming Blade")
+            const source = fromUuidSync(eff.origin)
+            if(source){
+                const item = this.getItem('Booming Blade', source)
+                const scale = this.getCantripScale(this.getLevel(source))
+                await this.deleteEffect(this.source.actor, 'Booming Blade')
+                await this.damage({actor: source, targets: [this.source.token], type: 'thunder', dice: `${scale}d8`, itemData:item})
+                this.generateEffect(this.source.token, {effect: NAPOLITANOCONFIG.boomingBlade.effects.pre, sound: NAPOLITANOCONFIG.boomingBlade.sounds.pre})
+                this.message(`${this.name} moves and sustains ${this.damageData.roll.result} thunder damage (${this.damageData.roll.formula}) from Booming Blade.`, {title: 'Booming Blade'})
             }
         }
     }
@@ -2665,6 +2692,37 @@ export class workflow extends framework {
         if(!this.item.name === 'Scorching Ray') return
         const maxTargets = 3 + this.upcastAmount
         await this.recurItemUse(maxTargets)
+    }
+
+    async _shield(){
+        if(this.hasHitTargets && (this.itemData.isAttack || this.item.name === 'Magic Missile')){
+            const results = []
+            for(const token of this.hitTargetsArray) {
+                if( 
+                    this.isResponsive(token)
+                    && !this.hasEffect(token, 'Reaction')
+                    && this.hasItem({document: token,  options: {uses: true, type: 'spell'}}) 
+                ){
+                    let choices = this.getSpellOptions({document: token})
+                    if(choices.length) results.push(this.choose(choices, `${token.name}, ${this.item.name === 'Magic Missile' ? 'you are targeted by magic missile': 'the attack roll is a ' + this.data.attackRoll?.terms[0]?.total }. Cast Shield?`, 'Shield', {owner: getActorOwner(token), document: token, img: this.getItem("Shield", token, {type: 'spell'})?.img}))                
+                }
+            }
+            await Promise.all(results).then(async (values)=>{
+                let cast = false
+                for (const value of values.filter(v => v.choice)){
+                    const updated = await this.updateSpellUse(-1, value.choice, {document: value.document})
+                    if(updated.updated >= 0){
+                        cast = true
+                        this.message(`${value.document.name} spell level ${value.choice} reduced by one.`, {title: "Shield Cast", whisper: "GM"})
+                        await this.addActiveEffect({effectName: 'Shield', uuid: value.document.actor.uuid, origin: value.document.actor.uuid})
+                        await this.addActiveEffect({effectName: 'Reaction', uuid: value.document.actor.uuid, origin: value.document.actor.uuid})
+                    } else {
+                        this.message(`${value.document.name} does not have any remaining uses at the ${value.choice} level.`, {title: "Counterspell Not Cast"})
+                    }    
+                }
+                if(cast && this.itemData.isAttack) await this.recheckHits();
+            })
+        } 
     }
 
     async _shortRest() {

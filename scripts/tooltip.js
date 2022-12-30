@@ -195,6 +195,7 @@ const OVERRIDES = {
     'Armor of Agathys': 'Roll this item to apply armor. The damage dealt by the armor will be applied automatically when condition is met.'
     ,'Aura of Vitality': 'Roll this item. A new item "Aura of Vitality Healing" will appear in your inventory which you can then use to facilitate the bonus action healing.'
     ,'Bardic Inspiration': 'Target an ally and roll this item. If you have an enhanced form of bardic inspiration (e.g. magical inspiration) be sure to roll that one instead.'
+    ,'Booming Blade': 'Target a token and roll this item. You will be prompted for the melee weapon to use and then the spell will be cast as part of that attack.'
     ,'Compelled Duel': 'Roll ability to mark a target within 30 feet. None of the spell rules are automated.'
     ,'Eldritch Blast': 'Target a creature then roll item. You will then be prompted to select the remainder of the available targets (based on spell level) one at a time.'
     ,'Form of Dread': 'Roll this item to apply the effect to your token. You will be prompted automatically when saving throw opportunity arises during an attack.'
