@@ -264,13 +264,14 @@ export class framework {
             arcaneFirearm: this.source.actor.items.filter(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.arcaneFirearm?.selected),
             artificerTools: this.source.actor.items.filter(i => i.flags?.['napolitano-scripts']?.rightToolForTheJob),
             artificerLevel: this.source.actor.classes.artificer?.system?.levels ?? 0,
-            charismaMod: this.source.actor.system.abilities.cha.mod,
-            constitutionMod: this.source.actor.system.abilities.con.mod,
+            charismaMod: this.getMod('cha'),
+            constitutionMod: this.getMod('con'),
+            dexterityMod: this.getMod('dex'),
             disposition: this.source.actor.prototypeToken.disposition,
             druidLevel: this.source.actor.classes.druid?.system?.levels ?? 0,
             experimentalElixirs: this.source.actor.items.filter(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.experimentalElixir),
             hexWarriorWeapon: this.source.actor.items.filter(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.hexWarrior?.selected),
-            intelligenceMod: this.source.actor.system.abilities.int.mod,
+            intelligenceMod: this.getMod('int'),
             infusions: this.source.actor.items.filter(i => i.flags?.[napolitano.FLAGS.NAPOLITANO]?.infusion).concat(this.source.actor.items.filter(i => i.effects.find(e => e.flags?.['napolitano-scripts']?.infusion===true))),
             isConcentrating: this.hasEffect(this.source.actor, 'Concentrating'),
             isEvil: EVIL.includes(this.source.actor.system.details.alignment),
@@ -288,7 +289,7 @@ export class framework {
             superiorityDie: this.source.actor.system.scale?.['battle-master']?.['combat-superiority-die'] ?? '1d8',
             tempHp: this.getTempHP(),
             warlockLevel: this.source.actor.classes.warlock?.system?.levels ?? 0,
-            wisdomMod: this.source.actor.system.abilities.wis.mod,
+            wisdomMod: this.getMod('wis'),
             wizardLevel: this.source.actor.classes.wizard?.system?.levels ?? 0
         }
     }
@@ -330,6 +331,7 @@ export class framework {
         if(!this.source.token) return {}
         return {
             disposition: this.source.token.disposition,
+            img: this.source.token.texture.src,
             owner: getActorOwner(this.source.token)
         }
     }
@@ -658,8 +660,8 @@ export class framework {
                     s = s.attachTo(target)
                 }
                 if(effect.wait) s = s.wait(effect.wait)
-                if(effect.fadeIn) s = s.fadeIn(effect.fadeIn, {ease: "easeOutCubic"})
-                //if(effect.fadeOut) s = s.fadeOut(effect.fadeOut, {ease: "easeOutQuint"})
+                if(effect.fadeIn) s = s.fadeIn(effect.fadeIn)
+                if(effect.fadeOut) s = s.fadeOut(effect.fadeOut)
                 if(effect.below) s = s.elevation(target.elevation)
         }
         s.play()
@@ -684,6 +686,10 @@ export class framework {
 
     getDistance(tokenA, tokenB){
         return MidiQOL.getDistance(tokenA, tokenB, false, true)
+    }
+
+    getMod(mod, document = this.source.actor){
+        return (document.actor ? document.actor.system?.abilities?.[mod]?.mod : document.system?.abilities?.[mod]?.mod) ?? 0
     }
 
     getSize(document = this.source.actor){
@@ -1522,6 +1528,7 @@ export class workflow extends framework {
             case 'eldritchBlast': await flow._eldritchBlast(); break;
             case 'guidedStrike': await flow._guidedStrike(); break;
             case 'magicMissile': await flow._magicMissile(); break;
+            case 'mirrorImage': await flow._mirrorImage(); break;
             case 'parry': await flow._parry(); break;
             case 'potentSpellcasting': await flow._potentSpellcasting(); break;
             case 'precisionAttack': await flow._precisionAttack(); break;
@@ -2469,6 +2476,37 @@ export class workflow extends framework {
 
     async _message(){
         game.whisperSweetNothings.whisperSweetNothings()
+    }
+
+    async _mirrorImage() {
+        if(this.hook === 'deleteActiveEffect'){
+            await Sequencer.EffectManager.endEffects({ name: `MirrorImage-${this.source.token.id}-*` });
+        } else {
+            if (!this.hasTargets) return;
+            const target = this.firstHitTarget
+            const mirrorImages = Sequencer.EffectManager.getEffects().filter(effect => effect.data.name && effect.data.name.startsWith(`MirrorImage-${target.id}`));
+            if (!mirrorImages.length) return;
+            await this.rollDice('1d20')
+            let dc;
+            switch(mirrorImages.length){
+                case 3: dc = 6; break;
+                case 2: dc = 8; break;
+                case 1: dc = 11; break;
+                default: return console.log("Error: Mirror Images remaining is not 1, 2, or 3."); 
+            }
+            const mirrorSuccess = this.roll.total < dc ? false : true
+            const mirrorAC = 10 + this.getMod('dex', target);
+            const mirrorHit = this.data.attackRoll.total >= mirrorAC ? true : false
+            this.message(`${target.name} rolls a ${this.roll.total}, ${mirrorSuccess ? 'succeeding' : 'failing'} the DC of ${dc}.${mirrorSuccess ? (" The attack roll " + (mirrorHit ? "hits" : "misses") + " the mirror image's AC (" + mirrorAC + ").") : ' The attack roll is directed at ' + target.name + '.'}` , {title: 'Mirror Image'})  
+            if(!mirrorSuccess) return
+            this.data.targets.forEach((obj) => {
+                if (obj.id === target.id) this.data.targets.delete(obj);
+              })
+            if (mirrorHit) {
+                await wait(500);
+                await Sequencer.EffectManager.endEffects({ name: mirrorImages.map(effect => effect.data.name)[0] });
+            }
+        }
     }
 
     async _moonbeam(){

@@ -197,6 +197,12 @@ Hooks.once("midi-qol.midiReady", () => {
         await Promise.all(results)
     });
 
+    HOOKIDS['midi-qol.preCheckHits'] = Hooks.on('midi-qol.preCheckHits', async function(data){
+        const hook = "midi-qol.preCheckHits", results = [];
+        if(game.settings.get("napolitano-scripts", "mirror-image")) results.push(workflow.playAsync('mirrorImage', data, {hook: hook}))
+        await Promise.all(results)
+    });
+
     HOOKIDS['midi-qol.preDamageRollComplete'] = Hooks.on("midi-qol.preDamageRollComplete", async (data) => {
         const hook = "midi-qol.preDamageRollComplete", results = [];
 
@@ -419,6 +425,7 @@ HOOKIDS['deleteActiveEffect'] = Hooks.on("deleteActiveEffect", async (data, opti
             case "Aura of Vitality": workflow.play('auraOfVitality', data, {hook: hook, activeEffectDelete: true}); break;
             case "Cloak of Flies": workflow.play('cloakOfFlies', data, {hook: hook, activeEffectDelete: true}); break;
             case "Dragon's Breath": workflow.play('dragonsBreath', data, {hook: hook, activeEffectDelete: true}); break;
+            case "Mirror Image": workflow.playAsync('mirrorImage', data, {hook: hook, activeEffectDelete: true}); break;
             case "Spirit Guardians": workflow.play('spiritGuardians', data, {hook: hook, activeEffectDelete: true}); break;
             case 'Torch': workflow.play('torch', data, {hook: hook, activeEffectDelete: true}); break;
         }

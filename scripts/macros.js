@@ -84,6 +84,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'lungingAttack': await macro._lungingAttack(); break;
             case 'mageHand': await macro._mageHand(); break;
             case 'magicalTinkering': await macro._magicalTinkering(); break;
+            case 'mirrorImage': await macro._mirrorImage(); break;
             case 'moonbeam': await macro._moonbeam(); break;
             case 'nathairsMischief': await macro._nathairsMischief(); break;
             case 'naturalBargainer': await macro._naturalBargainer(); break;
@@ -1179,6 +1180,48 @@ game.napolitano.macros(args, 'createBonfire', options)
                 this.info('Roleplay the effects and take notes on items/journal as applicable.')
         }
         this.message(`${this.name} uses magical tinkering and imbues ${tinker}` , {title: 'Magical Tinkering'})
+    }
+
+    async _mirrorImage(){
+        this.generateEffect(this.source.token)
+
+        const positions = [];
+        const numberOfImages = 3;
+        const angles = [...Array(120).keys()].map(x => x * 3);
+        for (let i = 0; i < numberOfImages; i++) {
+            var centerOffset = 10 + Math.random() * 120;
+            var rotationOffset = angles.length / numberOfImages * i;
+            const trig = (formula) => {
+                const pos = angles.map(angle => centerOffset * Math[formula](angle * (Math.PI / 180)));
+                return [...pos.slice(rotationOffset), ...pos.slice(0, rotationOffset)];
+            }
+            positions.push({
+                x: trig('cos'),
+                y: trig('sin'),
+            });
+        }
+        const seq = new Sequence()
+        positions.forEach((position, index) => {
+            seq.effect()
+                .from(this.source.token)
+                .fadeIn(1000)
+                .attachTo(this.source.token)
+                .loopProperty("sprite", "position.x", {
+                    values: index % 2 ? position.x : position.x.slice().reverse(),
+                    duration: 200,
+                    pingPong: false,
+                })
+                .loopProperty("sprite", "position.y", {
+                    values: index % 3 ? position.y : position.y.slice().reverse(),
+                    duration: 200,
+                    pingPong: false,
+                })
+                .persist()
+                .scaleOut(0, 300, { ease: "easeInExpo" })
+                .opacity(0.5)
+                .name(`MirrorImage-${this.source.token.id}-${index}`);
+        });
+        seq.play()  
     }
 
     async _moonbeam(){//tested v10

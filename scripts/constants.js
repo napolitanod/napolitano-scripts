@@ -493,6 +493,10 @@ export const NAPOLITANOCONFIG = {
         name: "Magical Tinkering",
         options: [`Light: External Object`, 'Light: On Self', 'Light: On Target', 'Other: External Object', 'Other'],
     },
+    mirrorImage: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Impact/Impact_04_Dark_Purple_400x400.webm', scale: 1, fadeIn: 500}},
+        name: "Mirror Image"
+    },
     moonbeam: {
         killIn: {minutes: 1},
         name: "Moonbeam"
@@ -758,6 +762,7 @@ export const CONFIGS = [
     {id:"hexblades-curse", name:"Hexblade's Curse"},
     {id:"hungry-jaws", name:"Hungry Jaws"},
     {id:"intrusive-echoes", name:"Intrusive Echoes"},
+    {id:"mirror-image", name:"Mirror Image"},
     {id:"motivational-speech", name:"Motivational Speech"},
     {id:"nathairs-mischief", name:"Nathair's Mischief"},
     {id:"necrotic-shroud", name:"Necrotic Shroud"},
