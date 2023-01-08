@@ -744,6 +744,7 @@ export const CONFIGS = [
     {id:"link-items", name:"Link Items to Uses"},
     {id:"long-rest", name:"Long Rest"},
     {id:"short-rest", name:"Short Rest"},
+    {id:"ping-dm", name:"Ping DM"},
     {id:"ancestral-protectors", name:"Ancestral Protectors"},
     {id:"arcane-firearm", name:"Arcane Firearm"},
     {id:"armor-of-agathys", name:"Armor of Agathys"},

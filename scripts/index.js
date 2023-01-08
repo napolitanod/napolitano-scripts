@@ -3,7 +3,7 @@ import {note} from "./note.js";
 import {api} from "./api.js";
 import {initiateLinking} from "./link-item-resource.js";
 import {CONFIGS, EFFECTCONDITIONS, HOOKIDS, setConfigs} from "./constants.js";
-import {tokenCreateEmbeddedDocuments, addActiveEffectDerived, addItem, choose, deleteItem, destroyItem, killIn, logIt, promptTarget, requestSkillCheck, updateActor, updateItem, updatePrototypeToken, updateToken, useItem, yesNo} from "./helpers.js";
+import {tokenCreateEmbeddedDocuments, addActiveEffectDerived, addItem, chat, choose, deleteItem, destroyItem, killIn, logIt, promptTarget, requestSkillCheck, updateActor, updateItem, updatePrototypeToken, updateToken, useItem, yesNo} from "./helpers.js";
 import { workflow } from "./workflow.js";
 export let napolitanoScriptsSocket; //var for socketlib
 import {HideNPCNames} from "./hideNames.js"
@@ -125,16 +125,13 @@ Hooks.once('ready', async function() {
 Hooks.once("midi-qol.midiReady", () => {
     
     HOOKIDS['midi-qol.preItemRoll'] = Hooks.on('midi-qol.preItemRoll', async function(data){
-        const hook = "midi-qol.preItemRoll";
-        if(game.settings.get("napolitano-scripts", "counterspell") && !data.options?.notCast){
-            await workflow.playAsync('counterspell', data, {hook: hook});
-        }
-        if(game.settings.get("napolitano-scripts", "pack-tactics")){
-            workflow.play('packTactics', data, {hook: hook});
-        }
-        if(game.settings.get("napolitano-scripts", "ancestral-protectors")){
-            workflow.play('ancestralProtectors', data, {hook: hook});
-        }
+        const hook = "midi-qol.preItemRoll";if(data.actor?.name === 'Cannon' && game.settings.get("napolitano-scripts", "ancestral-protectors")) {
+            if(!workflow.play('cannon', data, {hook: hook})) return false
+        };
+        if(game.settings.get("napolitano-scripts", "counterspell") && !data.options?.notCast) await workflow.playAsync('counterspell', data, {hook: hook});
+        if(game.settings.get("napolitano-scripts", "pack-tactics")) workflow.play('packTactics', data, {hook: hook});
+        if(game.settings.get("napolitano-scripts", "ancestral-protectors")) workflow.play('ancestralProtectors', data, {hook: hook});
+        
     });
     HOOKIDS['midi-qol.preTargeting'] = Hooks.on('midi-qol.preTargeting', async function(data){
         const hook = "midi-qol.preTargeting", results = [];
@@ -297,6 +294,7 @@ Hooks.once("socketlib.ready", () => {
     napolitanoScriptsSocket.register("tokenCreateEmbeddedDocuments", tokenCreateEmbeddedDocuments);
     napolitanoScriptsSocket.register("addActiveEffectDerived", addActiveEffectDerived);
     napolitanoScriptsSocket.register("addItem", addItem);
+    napolitanoScriptsSocket.register("chat", chat);
     napolitanoScriptsSocket.register("choose", choose);
     napolitanoScriptsSocket.register("deleteItem", deleteItem);
     napolitanoScriptsSocket.register("destroyItem", destroyItem);

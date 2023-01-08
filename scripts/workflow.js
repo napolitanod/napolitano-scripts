@@ -1551,6 +1551,7 @@ export class workflow extends framework {
             case 'auraOfVitality': flow._auraOfVitality(); break;
             case 'blessedStrikes': flow._blessedStrikes(); break;
             case 'boomingBlade': flow._boomingBlade(); break;
+            case 'cannon': return flow._cannon(); break;
             case 'chardalyn': flow._chardalyn(); break;
             case 'checkRoll': flow._checkRoll(); break;
             case 'clearCombatantReactions': flow._clearCombatantReactions(); break;
@@ -1804,6 +1805,14 @@ export class workflow extends framework {
                 this.message(`${this.name} moves and sustains ${this.damageData.roll.result} thunder damage (${this.damageData.roll.formula}) from Booming Blade.`, {title: 'Booming Blade'})
             }
         }
+    }
+
+    _cannon(){
+        if(this.item.name === 'Cannon Fire!' && (!this.hasEffect(this.source.actor, 'Load') || !this.hasEffect(this.source.actor, 'Aim'))) {
+            this.warn('Cannon must be loaded and aimed before it can be fired (each of those are actions).')
+            return false
+        }
+        return true
     }
 
     /**
@@ -2584,8 +2593,8 @@ export class workflow extends framework {
 
     async _pan(){
         const token = this.currentCombatantPlaceable
-        if(game.user.isGM || this.token.isVisible){
-            canvas.animatePan({x: token?.center.x, y: token?.center.y, duration: 500});
+        if(game.user.isGM || this.token?.isVisible){
+            canvas.animatePan({x: token?.center?.x, y: token?.center?.y, duration: 500});
         }
     }
 

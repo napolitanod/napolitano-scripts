@@ -29,7 +29,7 @@ export function chat(message, options = {}){
 }
 
 export async function choose(options = [], prompt = ``, title = 'Please choose', {img = '', gm = false, player = ''}={}){
-    let dialog, result, time = 20000;
+    let dialog, result, time = 20000, alteredTitle = title + (player ? ` (${player} Prompted)` : '');
     const query = new Promise((resolve) => {
         const dialog_options = (options[0] instanceof Array)
             ? options.map(o => `<option value="${o[0]}">${o[1]}</option>`).join(``)
@@ -37,7 +37,7 @@ export async function choose(options = [], prompt = ``, title = 'Please choose',
         const content = `<form><div><div class="napolitano-choose-title">${prompt}</div><div class="napolitano-choose-body"><select id="choice">${dialog_options}</select></div></div></form>`;
     
         dialog = new Dialog({
-            title: title + (player ? ` (${player} Prompted)` : ''),
+            title: alteredTitle,
             content, 
             buttons : { 
                 OK : {
@@ -59,7 +59,17 @@ export async function choose(options = [], prompt = ``, title = 'Please choose',
         result = await query
         return result
     } 
-    await Promise.race([query, !game.user.isGM ? napolitanoScriptsSocket.executeAsGM("choose", options, prompt, title, {img: img, gm: true, player: game.user.name}) : wait(time), wait(time)]).then((value) => {result = value})
+
+    const races = [query]
+    if(!game.user.isGM){
+        if(game.settings.get("napolitano-scripts", "ping-dm")) {
+            races.push(napolitanoScriptsSocket.executeAsGM("choose", options, prompt, title, {img: img, gm: true, player: game.user.name}))
+        } else {
+            napolitanoScriptsSocket.executeAsGM("chat", `${game.user.name} prompted: ${alteredTitle}`, {whisper: true})
+        }  
+    } 
+    if(time) races.push(wait(time))
+    await Promise.race(races).then((value) => {result = value})
     return result
 }
 
@@ -268,7 +278,13 @@ export async function yesNo(title = '', prompt = 'Continue?', {img = '', gm = fa
         return result
     }
     const races = [query]
-    if(!game.user.isGM) races.push(napolitanoScriptsSocket.executeAsGM("yesNo", title, prompt, {img: img, gm: true, player: game.user.name}))
+    if(!game.user.isGM){
+        if(game.settings.get("napolitano-scripts", "ping-dm")) {
+            races.push(napolitanoScriptsSocket.executeAsGM("yesNo", title, prompt, {img: img, gm: true, player: game.user.name}))
+        } else {
+            napolitanoScriptsSocket.executeAsGM("chat", `${game.user.name} prompted: ${alteredPrompt}`, {whisper: true})
+        }  
+    } 
     if(time) races.push(wait(time)) 
     await Promise.race(races).then((value) => {result = value})
     return result
