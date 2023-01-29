@@ -1679,7 +1679,7 @@ game.napolitano.macros(args, 'createBonfire', options)
      */
     async _turnUndead(){
         if(this.feature.dae === 'on'){
-            const destroy = this.source.actor.system?.scale?.cleric?.['destroy-undead'];
+            const destroy = this.source.actor.system?.scale?.cleric?.['destroy-undead']?.formula;
             const cr = this.getCR(this.firstTarget)
             if(!destroy || !cr) return;
             

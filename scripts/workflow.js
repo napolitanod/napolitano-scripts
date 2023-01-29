@@ -286,7 +286,7 @@ export class framework {
             spellAttack: this.source.actor.system.attributes.spelldc - 8,
             spelldc: this.source.actor.system.attributes.spelldc,
             spellMod: this.source.actor.system.attributes.spelldc - this.source.actor.system.attributes.prof - 8,
-            superiorityDie: this.source.actor.system.scale?.['battle-master']?.['combat-superiority-die'] ?? '1d8',
+            superiorityDie: this.source.actor.system.scale?.['battle-master']?.['combat-superiority-die']?.formula ?? '1d8',
             tempHp: this.getTempHP(),
             warlockLevel: this.source.actor.classes.warlock?.system?.levels ?? 0,
             wisdomMod: this.getMod('wis'),
@@ -816,7 +816,7 @@ export class framework {
     hasImmunity(document = this.source.actor, immunity = this.config.name){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
-        return actor.system?.traits.ci.value.find(i=> i === immunity.toLowerCase()) ? true : false
+        return actor.system?.traits.ci.value.has(immunity.toLowerCase()) ? true : false
     }
 
     //item id or name
@@ -1011,7 +1011,7 @@ export class framework {
     async rollBardicInspiration({document = this.source.actor, show=true}={}){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
-        const dice = `1${actor.system.scale.bard.inspiration}`
+        const dice = `1${actor.system.scale.bard.inspiration?.formula}`
         const result = await new Roll(dice).evaluate({async: true})
         if(show) this.showRoll(result)
         return result
@@ -2284,7 +2284,7 @@ export class workflow extends framework {
         if(!this.hasItem() || this.sourceData.disposition === this.firstHitTarget.disposition || this.hasEffect(this.source.actor, 'Reaction')) return
         const proceed = this.sourceData.owner ? await this.yesNo({owner: this.sourceData.owner}) : await this.yesNo()
         if(proceed){
-            let dice = this.source.actor.system.scale['circle-of-spores']?.['halo-of-spores'] ?? '1d4'
+            let dice = this.source.actor.system.scale['circle-of-spores']?.['halo-of-spores']?.formula ?? '1d4'
             if(this.hasEffect(this.source.actor, 'Symbiotic Entity')) dice = dice.replace('1d','2d')
             this.generateEffect(this.firstHitTarget)
             const result = await this.rollSaveDamage(this.firstHitTarget, {damage: 'none', dc: (8 + this.sourceData.wisdomMod + this.sourceData.prof), type: 'con'}, {targets: [this.firstHitTarget], dice: dice, type: 'necrotic'})
