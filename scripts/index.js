@@ -77,7 +77,7 @@ Hooks.once('ready', async function() {
 
     HOOKIDS['dnd5e.preRollSkill'] = Hooks.on("dnd5e.preRollSkill", async (actor, roll, ability) => {
         const hook = "dnd5e.preRollSkill", data = {actor: actor, roll: roll, ability: ability, options: {}}
-        if(ability === 'ste') roll = workflow.play('passWithoutTrace', data, {hook: 'preRollSkill'})
+        if(ability === 'ste') roll = workflow.play('passWithoutTrace', data, {hook: hook})
      });
 
     HOOKIDS['dnd5e.rollSkill'] = Hooks.on("dnd5e.rollSkill", async (actor, roll, ability) => {
