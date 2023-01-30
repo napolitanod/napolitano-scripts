@@ -3,11 +3,11 @@
  *      if(game.modules.get('napolitano-scripts')?.active){
 		    await game.napolitano.postRollSkill(this, roll, skillId);
 	    }
- * Add to rollAbilitySave 
+ * Add to rollAbilityTest  
         if(game.modules.get('napolitano-scripts')?.active){
 		await game.napolitano.postRollAbilityTest(this, roll, abilityId);
 	}
- * Add to rollAbilityTest
+ * Add to rollAbilitySave
     if(game.modules.get('napolitano-scripts')?.active){
 		await game.napolitano.postRollAbilitySave(this, roll, abilityId);
 	}
