@@ -207,6 +207,15 @@ export const NAPOLITANOCONFIG = {
             }
         },
     },
+    brazierOfCommandingFireElementals: {
+        effects:{
+            pre: {file: 'modules/jb2a_patreon/Library/Generic/Fire/Eruption_01_Regular_Orange_600x600.webm', scale: 1}
+        },
+        sounds: {
+            pre: {file: 'modules/SoundBoard-BlitzFreePack/bundledAudio/Magic/fire-blast-binaural/Designed%20Fire-04.ogg', volume: 0.85}
+        },
+        name: "Fire Elemental"
+    },
     channelDivinityInvokeDuplicity: {
         killIn: {minutes: 1},
         name: "Illusion"

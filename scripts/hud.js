@@ -5,20 +5,29 @@ import {macros} from './macros.js';
 export function buildHud(html, token){
     let combatactions = $('<div>').addClass("tah-actions")
     for (const [k,option] of Object.entries(HUDOPTIONS).sort(([,a],[,b]) => a.name.localeCompare(b.name))){
-        combatactions.append($('<div>').addClass("tah-action").append($('<button>').data("data-id", {token: token.id, ruleset: k}).click(_run).append($('<span>').addClass("tah-action-name").html(option.name))))
-    }
-    const titlebutton = $('<button>').addClass("tah-title-button").val("combatactions").html('Combat')
-    const subcategory = $('<div>').addClass("tah-subcategory").append($('<div>').addClass("tah-subtitle-wrapper").append($('<div>').addClass("tah-subtitle").html('Actions'))).append(combatactions)
-    const content = $('<div class="tah-content" style="background: #00000000"></div>').append(subcategory)
-    const category = $('<div>').addClass("tah-category").attr('id', 'tah-category-combatactions').hover(_hudCategoryHover, _hudCategoryHoverOut).append(titlebutton).append(content)
-    $(html).find(`div[id="tah-category-checks"]`).after(category)
+        combatactions.append(
+            $('<div>').addClass("tah-action").addClass("toggle").addClass("active").append(
+                $('<button>').data("data-id", {token: token.id, ruleset: k}).click(_run).append(
+                    $('<span>').addClass("tah-action-button-content").html(option.name)
+                )
+            )
+        )
+    }          
+    const titlebutton = $('<button>').addClass("tah-category-button").addClass("disable-edit").val("combatactions").attr("data-name", "Combat").append(
+        $('<span>').addClass("tah-category-button-content").append(
+            $('<div>').addClass("tah-category-button-text").html('Combat')
+            )
+        )
+    const subcategory = $('<div>').addClass("tah-subcategories-wrapper").addClass("expand-down").append($('<div>').addClass("tah-subcategories").append($('<div>').addClass("tah-subcategory").attr("data-show-title","true").append($('<div>').addClass("tah-subtitle").addClass("disable-edit").attr("data-type","system").attr("id","combat_actions").attr("data-has-derived-subcategories", "false").html('Actions')).append(combatactions)))
+    const category = $('<div>').addClass("tah-category").attr('id', 'tah-category-combatactions').attr('data-type', 'custom').hover(_hudCategoryHover, _hudCategoryHoverOut).append(titlebutton).append(subcategory)
+    $(html).find(`div[id="tah-category-attributes"]`).after(category)
     return html
 }
-
+          
 export function setHudHelp(html, token){
     if(token?.actor?.items?.size){
         for(const item of token.actor.items){
-            const id = `${item.type === 'feat' ? 'feat' : (item.type ==='spell' ? 'spell' : 'item')}|${token.id}|${item.id}`
+            const id = `${item.type === 'feat' ? 'feature' : (item.type ==='spell' ? 'spell' : 'item')}|${token.actor.id}|${token.id}|${item.id}`
             const res = $(html).find(`button[value="${id}"]`)
             res.data("data-id", {uuid: item.uuid}).hover(hudHover, hudHoverOut)
         }
