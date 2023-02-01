@@ -39,6 +39,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'blight': await macro._blight(); break;
             case 'blindnessDeafness': await macro._blindnessDeafness(); break;
             case 'boomingBlade': await macro._boomingBlade(); break;
+            case 'brazierOfCommandingFireElementals': await macro._brazierOfCommandingFireElementals(); break;
             case 'channelDivinityInvokeDuplicity': await macro._channelDivinityInvokeDuplicity(); break;
             case 'chromaticOrb': await macro._chromaticOrb(); break;
             case 'climbUpon': await macro._climbUpon(); break;
@@ -71,6 +72,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'goodberry': await macro._goodberry(); break;
             case 'grease': await macro._grease(); break;
             case 'grapple': await macro._grapple(); break;
+            case 'grapplingPin': await macro._grapplingPin(); break;
             case 'grapplingStrike': await macro._grapplingStrike(); break;
             case 'healingSpirit': await macro._healingSpirit(); break;
             case 'hex': await macro._hex(); break;
@@ -312,6 +314,11 @@ game.napolitano.macros(args, 'createBonfire', options)
             const target = result.hitTargets.values().next().value
             await this.addActiveEffect({effectName: 'Booming Blade', uuid: target.actor.uuid, origin: this.source.actor.uuid})
         }
+    }
+
+    async _brazierOfCommandingFireElementals(){
+        await this.summon();
+        this.message( `${this.name} speaks the brazier’s command word and summons a fire elemental.`, {title: this.item.name})
     }
 
     async _channelDivinityInvokeDuplicity(){
@@ -860,6 +867,16 @@ game.napolitano.macros(args, 'createBonfire', options)
             await wait(2000) 
             this.addActiveEffect({effectName: "Grappled", uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid})
             this.message(`${this.firstTarget.name} is grappled!`, {title: 'Grapple Result'})
+        }
+        return ((bypass || this.contestData?.won) ? true : false)
+    }
+
+    async _grapplingPin(){
+        const success = await this._grapple({contestId: 'grapple'})
+        if(success){
+            this.addActiveEffect({effectName: "Restrained", uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid})
+            this.addActiveEffect({effectName: "Restrained", uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
+            this.message(`${this.firstTarget.name} is pinned!`, {title: 'Pin Result'})
         }
     }
 

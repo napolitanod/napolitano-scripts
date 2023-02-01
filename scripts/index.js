@@ -109,7 +109,7 @@ Hooks.once('ready', async function() {
         if(['Counterspell', 'Dispell Magic'].includes(item.name)) workflow.play('powerSurge', {item: item}, {hook: hook})    
     });
 
-    HOOKIDS['renderTokenActionHUD'] = Hooks.on('renderTokenActionHUD', async function(hud, html, options = {}){
+    HOOKIDS['renderTokenActionHud'] = Hooks.on('renderTokenActionHud', async function(hud, html, options = {}){
         const token = canvas.scene.tokens.find(t => t.id === options.actions?.tokenId)
         if(!token) return
         html = setHudHelp(html, token)
