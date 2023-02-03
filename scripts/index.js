@@ -276,6 +276,9 @@ Hooks.once("midi-qol.midiReady", () => {
         if(game.settings.get("napolitano-scripts", "motivational-speech")){
             workflow.play('motivationalSpeech', data, {hook: hook})
         }
+        if(data.defaultDamageType === "healing" && game.settings.get("napolitano-scripts", "blessed-healer")){
+            workflow.play('blessedHealer', data, {hook: hook}); 
+        }
         switch(data.item?.name){
              case 'Animate Dead': workflow.play('animateDead', data, {hook: hook}); break;
              case 'Halo of Spores': workflow.play('haloOfSpores', data, {hook: hook}); break;
@@ -373,12 +376,11 @@ HOOKIDS['deleteToken'] = Hooks.on("deleteToken", async (document, options, userI
 HOOKIDS['updateActor'] = Hooks.on("updateActor", async (document, data, diff, userId) => {
     const hook = "updateActor"
     if(game.user.isGM){
-        if(game.settings.get("napolitano-scripts", "relentless") && diff.oldHpVal && diff.dhp <= -10 && diff.oldHpVal + diff.dhp <= 0){
-            workflow.play('relentless', document, {hook: hook});
-        }               
-        if(game.settings.get("napolitano-scripts", "relentless-endurance") && diff.oldHpVal && diff.dhp !== undefined && diff.oldHpVal + diff.dhp <= 0){
-            workflow.play('relentlessEndurance', document, {hook: hook});
-        }
+        if(diff.oldHpVal && diff.dhp !== undefined && diff.oldHpVal + diff.dhp <= 0){
+            if(game.settings.get("napolitano-scripts", "relentless-endurance"))  workflow.play('relentlessEndurance', document, {hook: hook});
+            if(game.settings.get("napolitano-scripts", "death-ward"))  workflow.play('deathWard', document, {hook: hook});
+            if(game.settings.get("napolitano-scripts", "relentless") && diff.dhp <= -10) workflow.play('relentless', document, {hook: hook});
+        }  
     }
 });
    
