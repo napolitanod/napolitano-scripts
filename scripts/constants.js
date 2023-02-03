@@ -175,6 +175,10 @@ export const NAPOLITANOCONFIG = {
         killIn: {minutes: 1},
         name: "Bigby's Hand"
     },
+    blessedHealer: {
+        effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Healing/HealingAbility_01_Yellow02_200x200.webm', scale: 1, wait: 100}},
+        name: "Blessed Healer"
+    },
     blessedStrikes: {
         effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Explosion/Explosion_03_Regular_GreenOrange_400x400.webm', scale: 1, wait: 100}},
         name: "Blessed Strikes",
@@ -284,6 +288,9 @@ export const NAPOLITANOCONFIG = {
     daylight: {
         killIn: {minutes: 60},
         name: "Daylight"
+    },
+    deathWard: {
+        name: "Death Ward"
     },
     disarmingAttack: {
         name: "Disarming Attack"
@@ -757,11 +764,13 @@ export const CONFIGS = [
     {id:"ancestral-protectors", name:"Ancestral Protectors"},
     {id:"arcane-firearm", name:"Arcane Firearm"},
     {id:"armor-of-agathys", name:"Armor of Agathys"},
+    {id:"blessed-healer", name:"Blessed Healer"},
     {id:"blessed-strikes", name:"Blessed Strikes"},
     {id:"chardalyn", name:"Chardalyn"},
     {id:"colossus-slayer", name:"Colossus Slayer"},
     {id:"counterspell", name:"Counterspell"},
     {id:"cutting-words", name:"Cutting Words"},
+    {id:"death-ward", name:"Death Ward"},
     {id:"disarming-attack", name:"Disarming Attack"},
     {id:"echoing-mind", name:"Echoing Mind"},
     {id:"form-of-dread", name:"Form of Dread"},

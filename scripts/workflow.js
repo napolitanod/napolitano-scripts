@@ -271,6 +271,7 @@ export class framework {
             druidLevel: this.source.actor.classes.druid?.system?.levels ?? 0,
             experimentalElixirs: this.source.actor.items.filter(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.experimentalElixir),
             hexWarriorWeapon: this.source.actor.items.filter(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.hexWarrior?.selected),
+            hp: this.getHP(),
             intelligenceMod: this.getMod('int'),
             infusions: this.source.actor.items.filter(i => i.flags?.[napolitano.FLAGS.NAPOLITANO]?.infusion).concat(this.source.actor.items.filter(i => i.effects.find(e => e.flags?.['napolitano-scripts']?.infusion===true))),
             isConcentrating: this.hasEffect(this.source.actor, 'Concentrating'),
@@ -1549,6 +1550,7 @@ export class workflow extends framework {
             case 'animateDead': flow._animateDead(); break;
             case 'armorOfAgathys': flow._armorOfAgathys(); break;
             case 'auraOfVitality': flow._auraOfVitality(); break;
+            case 'blessedHealer': flow._blessedHealer(); break;
             case 'blessedStrikes': flow._blessedStrikes(); break;
             case 'boomingBlade': flow._boomingBlade(); break;
             case 'cannon': return flow._cannon(); break;
@@ -1562,6 +1564,7 @@ export class workflow extends framework {
             case 'combatTurnUpdateEvents': flow._combatTurnUpdateEvents(); break;
             case 'combatRoundUpdateEvents': flow._combatRoundUpdateEvents(); break;
             case 'darkness': flow._darkness(); break;
+            case 'deathWard': flow._deathWard(); break;
             case 'deleteCombat': flow._deleteCombat(); break;
             case 'disarmingAttack': flow._disarmingAttack(); break;
             case 'dragonsBreath': flow._dragonsBreath(); break;
@@ -1774,6 +1777,21 @@ export class workflow extends framework {
         if(this.item.id) await this.deleteItem()
     }
 
+    async _blessedHealer(){
+        if(this.item?.name !== 'Blessed Healer' 
+            && this.data.defaultDamageType === "healing"
+            && this.itemData.isSpell 
+            && this.spellLevel 
+            && this.hasItem() 
+            && this.data.damageList.find(d => d.newHP > d.oldHP && d.tokenId !== this.source.token.id)
+            ) {
+                const heals = 2 + this.spellLevel
+                const newHp = Math.min(this.sourceData.maxHp, this.sourceData.hp + heals)
+                this.generateEffect(this.source.token)
+                await this.damage({dice: `${heals}d1`, show:false, flavor: `${this.name} is healed ${heals} HP.`, type: "healing", targets: [this.source.token], itemData: this.getItem(), itemCardId: "new"})
+                this.message(`${this.name} has ${heals} HP healed.`, {title: "Blessed Healer"})
+            }
+    }
     /**
      * Tested: v10
      * Adds radiant damage for first cantrip damage of the round.
@@ -2050,6 +2068,13 @@ export class workflow extends framework {
             if(game.modules.get('token-attacher')?.active) await tokenAttacher.attachElementsToToken(this.walls, this.source.token.id)
         }
         await this.heavilyObscure()
+    }
+
+    async _deathWard(){
+        if(!this.hasEffect()) return
+        await this.updateActor({data: {"system.attributes.hp.value": 1}})
+        await this.deleteEffect()
+        this.message(`${this.name} fights off the cold grip of death!`, {title: 'Death Ward'})
     }
 
     async _deleteCombat(){
