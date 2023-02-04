@@ -925,8 +925,9 @@ export class framework {
     }
 
     message(message, options = {}){    
-        message =`<div class="napolitano-chat-message-body">${message}</div>`;
-        if(options.title) message = `<div class="napolitano-chat-message-title">${options.title}</div>` + message 
+        const addedClasses = options.class ? options.class : ''
+        message =`<div class="napolitano-chat-message-body ${addedClasses}">${message}</div>`;
+        if(options.title) message = `<div class="napolitano-chat-message-title ${addedClasses}">${options.title}</div>` + message 
         chat(message, {user : this.userId, speaker : this.getSpeaker(), ...options})
     }
 
@@ -1549,6 +1550,7 @@ export class workflow extends framework {
             case 'ancestralProtectors': flow._ancestralProtectors(); break;
             case 'animateDead': flow._animateDead(); break;
             case 'armorOfAgathys': flow._armorOfAgathys(); break;
+            case 'assassinate': flow._assassinate(); break;
             case 'auraOfVitality': flow._auraOfVitality(); break;
             case 'blessedHealer': flow._blessedHealer(); break;
             case 'blessedStrikes': flow._blessedStrikes(); break;
@@ -1609,6 +1611,7 @@ export class workflow extends framework {
             case 'whisperingAura': flow._whisperingAura(); break;
             case 'wildSurgeRetribution': flow._wildSurgeRetribution(); break;
             case 'witchBolt': flow._witchBolt(); break;
+            case 'zeroChargeDestroy': flow._zeroChargeDestroy(); break;
         }
     }
 
@@ -1712,6 +1715,15 @@ export class workflow extends framework {
             this.roll = await new Roll(`${damage}d1`).evaluate({async: true})
             await this.damage({type: "cold", targets: [this.source.token], itemData: this.getItem(), itemCardId: "new"})
             this.message(`The Armor of Agathys from the targets that were attacked deals ${damage} cold damage to ${this.source.actor.name}.`, {title: 'Armor of Agathys'}) //no itemcard so flavor is messaged in chat
+        }
+    }
+
+    async _assassinate(){
+        if(this.hasItem()){
+            if(this.hook === 'midi-qol.AttackRollComplete' && this.hasEffect(this.firstHitTarget, "Surprised")) this.setMidiRollIsCritical()
+            if(this.hook === 'midi-qol.preItemRoll' && this.hasCombat && this.combat.round === 1){
+                if(this.getInitiative() >= this.getInitiative({token: this.firstHitTarget})) this.setMidiRollAdvantage()
+            }
         }
     }
 
@@ -2081,7 +2093,6 @@ export class workflow extends framework {
         for(const token of this.scene.tokens){
             workflow.play('clearCombatantReactions', {scene: this.scene, tokenId: token.id}, {hook: 'clearReactions'})
         }
-        
     }
 
     async _disarmingAttack(){
@@ -3069,5 +3080,9 @@ export class workflow extends framework {
                 await this.removeConcentration()
             }
         }
+    }
+
+    async _zeroChargeDestroy(){
+        if(this.config.rollOneOnTwenty.includes(this.item.name)) return this.message(`${this.item.name} has reached zero charges. ${this.name}, roll [[/r 1d20]] to see if the item experiences any detrimental effects.`, {title: `${this.item.name}`, class: `napolitano-chat-message-red`})
     }
 }
