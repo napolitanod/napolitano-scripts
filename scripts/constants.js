@@ -147,6 +147,9 @@ export const NAPOLITANOCONFIG = {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Ice/SnowflakeBurst_01_Regular_TealYellow_Loop_600x600.webm', fadeOut: 500, scale: 0.5, wait: 100}},
         name: "Armor of Agathys"
     },
+    assassinate: {
+        name: "Assassinate"
+    },
     auraOfVitality: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Healing/HealingAbility_02_Regular_PurplePink_Burst_600x600.webm', scale: 1}},
         name: "Aura of Vitality",
@@ -723,6 +726,9 @@ export const NAPOLITANOCONFIG = {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuff01_02_Regular_Grey_400x400.webm', scale: 1.25}},
         killIn: {minutes: 60},
         name: "Unseen Servant"
+    },
+    zeroChargeDestroy: {
+        rollOneOnTwenty: ['Wand of Magic Missiles', 'Wand of Fear']
     }
 }
 
@@ -764,6 +770,7 @@ export const CONFIGS = [
     {id:"ancestral-protectors", name:"Ancestral Protectors"},
     {id:"arcane-firearm", name:"Arcane Firearm"},
     {id:"armor-of-agathys", name:"Armor of Agathys"},
+    {id:"assassinate", name: "Assassinate"},
     {id:"blessed-healer", name:"Blessed Healer"},
     {id:"blessed-strikes", name:"Blessed Strikes"},
     {id:"chardalyn", name:"Chardalyn"},

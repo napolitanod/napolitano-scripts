@@ -125,13 +125,14 @@ Hooks.once('ready', async function() {
 Hooks.once("midi-qol.midiReady", () => {
     
     HOOKIDS['midi-qol.preItemRoll'] = Hooks.on('midi-qol.preItemRoll', async function(data){
-        const hook = "midi-qol.preItemRoll";if(data.actor?.name === 'Cannon' && game.settings.get("napolitano-scripts", "ancestral-protectors")) {
+        const hook = "midi-qol.preItemRoll";
+        if(data.actor?.name === 'Cannon') {
             if(!workflow.play('cannon', data, {hook: hook})) return false
         };
         if(game.settings.get("napolitano-scripts", "counterspell") && !data.options?.notCast) await workflow.playAsync('counterspell', data, {hook: hook});
         if(game.settings.get("napolitano-scripts", "pack-tactics")) workflow.play('packTactics', data, {hook: hook});
         if(game.settings.get("napolitano-scripts", "ancestral-protectors")) workflow.play('ancestralProtectors', data, {hook: hook});
-        
+        if(game.settings.get("napolitano-scripts", "assassinate")) workflow.play('assassinate', data, {hook: hook})
     });
     HOOKIDS['midi-qol.preTargeting'] = Hooks.on('midi-qol.preTargeting', async function(data){
         const hook = "midi-qol.preTargeting", results = [];
@@ -189,6 +190,7 @@ Hooks.once("midi-qol.midiReady", () => {
 
     HOOKIDS['midi-qol.AttackRollComplete'] = Hooks.on('midi-qol.AttackRollComplete', async function(data){
         const hook = "midi-qol.AttackRollComplete", results = [];
+        if(game.settings.get("napolitano-scripts", "assassinate")) workflow.play('assassinate', data, {hook: hook})
         if(game.settings.get("napolitano-scripts", "silvery-barbs")) results.push(workflow.playAsync('silveryBarbs', data, {hook: hook}))
         if(game.settings.get("napolitano-scripts", "shield")) results.push(workflow.playAsync('shield', data, {hook: hook}))
         await Promise.all(results)
@@ -390,6 +392,7 @@ HOOKIDS['updateItem'] = Hooks.on("updateItem", async (data, change, options, use
         if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.name)){
             if("equipped" in change?.system) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: !change.system.equipped});
         }
+        if(options.diff && "uses" in change?.system && change.system.uses.value === 0 && data.system?.uses?.per === "charges") workflow.play('zeroChargeDestroy', data, {hook: hook});    
     }
 });
 

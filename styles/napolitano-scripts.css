@@ -13,6 +13,15 @@
     background: rgba(0, 0, 0, 0.1);
 }
 
+.napolitano-chat-message-red {
+    padding: 6px;
+    background: rgba(112, 2, 2, 0.2);
+}
+
+.napolitano-chat-message-title.napolitano-chat-message-red {
+    background: rgba(112, 2, 2, 0.3);
+} 
+
 .napolitano-chat-message-body-black-mq {
     padding: 6px;
     margin: 3px 0;
