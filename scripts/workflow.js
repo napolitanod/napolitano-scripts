@@ -1573,6 +1573,7 @@ export class workflow extends framework {
             case 'dustDevil': flow._dustDevil(); break;
             case 'echoingMind': flow._echoingMind(); break;
             case 'fangedBite': flow._fangedBite(); break;
+            case 'fireShield': flow._fireShield(); break;
             case 'fogCloud': flow._fogCloud(); break;
             case 'formOfDread': flow._formOfDread(); break;
             case 'grease': flow._grease(); break;
@@ -2238,6 +2239,24 @@ export class workflow extends framework {
             }
             }
         }).render(true);
+    }
+
+    async _fireShield(){
+        if(this.hasHitTargets && this.itemData.isMeleeWeaponAttack){
+            this.hitTargets.forEach((value) => { 
+                if (value.actor && this.getDistance(value, this.source.token) <= 5){
+                    let damageType
+                    if(this.hasEffect(value.actor, "Fire Shield - Warm")) {
+                        damageType = 'fire'
+                    } else if(this.hasEffect(value.actor, "Fire Shield - Chill")) {
+                        damageType = 'cold'
+                    } else {
+                        return
+                    }
+                    this.damage({type: damageType, targets: [this.source.token], dice: '2d8', flavor: `${this.name} takes ${damageType} damage from the target's fire shield!`, itemData: this.getItem("Fire Shield", value.actor), itemCardId: "new"})              
+                }
+            })
+        }
     }
 
     async _fogCloud(){

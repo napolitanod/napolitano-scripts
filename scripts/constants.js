@@ -390,6 +390,10 @@ export const NAPOLITANOCONFIG = {
         killIn: {days: 1},
         name: "Nightmare"
     },
+    fireShield: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Explosion/Explosion_05_Dark_Orange_400x400.webm', fadeOut: 500, scale: 0.5, wait: 100}},
+        name: "Fire Shield"
+    },
     flamingSphere: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuffRing02_01_Regular_White_400x400.webm', scale: 1.5}},
         sounds: {pre: {file: 'modules/soundfxlibrary/Combat/Single/Spell%20Whoosh/spell-whoosh-2.mp3'}},
@@ -728,7 +732,7 @@ export const NAPOLITANOCONFIG = {
         name: "Unseen Servant"
     },
     zeroChargeDestroy: {
-        rollOneOnTwenty: ['Wand of Magic Missiles', 'Wand of Fear']
+        rollOneOnTwenty: ['Staff of Frost', 'Wand of Magic Missiles', 'Wand of Fear']
     }
 }
 
@@ -780,6 +784,7 @@ export const CONFIGS = [
     {id:"death-ward", name:"Death Ward"},
     {id:"disarming-attack", name:"Disarming Attack"},
     {id:"echoing-mind", name:"Echoing Mind"},
+    {id:"fire-shield", name:"Fire Shield"},
     {id:"form-of-dread", name:"Form of Dread"},
     {id:"green-flame-blade", name:"Green Flame Blade"},
     {id:"guided-strike", name:"Guided Strike"},

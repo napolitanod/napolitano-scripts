@@ -64,6 +64,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'figurineOfWonderousPowerLions': await macro._figurineOfWonderousPowerLions(); break;
             case 'figurineOfWonderousPowerObsidianSteed': await macro._figurineOfWonderousPowerObsidianSteed(); break;
             case 'findFamiliar': await macro._findFamiliar(); break;
+            case 'fireShield': await macro._fireShield(); break;
             case 'flamingSphere': await macro._flamingSphere(); break;
             case 'fogCloud': await macro._fogCloud(); break;
             case 'formOfDread': await macro._formOfDread(); break;
@@ -813,6 +814,11 @@ game.napolitano.macros(args, 'createBonfire', options)
             },
             default: "yes"
         }).render(true);
+    }
+
+    async _fireShield(){
+        const choice = await this.choose(['Warm', 'Chill'], 'Choose shield type.', 'Fire Shield', {owner: this.sourceData.owner, img: this.item.img})
+        if(choice) await this.addActiveEffect({effectName: `Fire Shield - ${choice}`, uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
     }
 
     async _flamingSphere(){//tested v10
