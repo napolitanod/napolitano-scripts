@@ -413,6 +413,12 @@ export const NAPOLITANOCONFIG = {
         name: "Form of Dread",
         prompt: "Use Form of Dread to frighten?"
     },
+    geniesWrath: {
+        effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Explosion/Explosion_03_Regular_PurplePink_400x400.webm', scale: 1, wait: 100}},
+        name: "Genie's Wrath",
+        prompt: "Use Genie's Wrath damage?",
+        availableItems: ["Genie's Vessel: Genie's Wrath (Dao)", "Genie's Vessel: Genie's Wrath (Djinni)", "Genie's Vessel: Genie's Wrath (Efreeti)", "Genie's Vessel: Genie's Wrath (Marid)"]
+    },
     greenFlameBlade: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Impact/Impact_04_Regular_Green_400x400.webm', scale: 1}},
         name: "Green-Flame Blade"
@@ -563,6 +569,11 @@ export const NAPOLITANOCONFIG = {
     },
     produceFlame: {
         name: "Produce Flame"
+    },
+    radiantSoul: {
+        name: "Radiant Soul",
+        prompt: "Add Radiant Soul Damage?",
+        effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Energy/SwirlingSparkles_01_Regular_Yellow_400x400.webm', scale: 1, wait: 100}}
     },
     rayOfEnfeeblement: {
         name: "Ray of Enfeeblement"
@@ -786,6 +797,7 @@ export const CONFIGS = [
     {id:"echoing-mind", name:"Echoing Mind"},
     {id:"fire-shield", name:"Fire Shield"},
     {id:"form-of-dread", name:"Form of Dread"},
+    {id:"genies-wrath", name:"Genie's Wrath"},
     {id:"green-flame-blade", name:"Green Flame Blade"},
     {id:"guided-strike", name:"Guided Strike"},
     {id:"heated-body", name:"Heated Body"},
@@ -801,6 +813,7 @@ export const CONFIGS = [
     {id:"parry", name:"Parry"},
     {id:"potent-spellcasting", name:"Potent Spellcasting"},
     {id:"precision-attack", name:"Precision Attack"},
+    {id:"radiant-soul", name:"Radiant Soul"},
     {id:"rayOfEnfeeblement", name: "Ray of Enfeeblement"},
     {id:"relentless", name:"Relentless"},
     {id:"relentless-endurance", name:"Relentless Endurence"},
