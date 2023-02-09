@@ -1528,12 +1528,14 @@ export class workflow extends framework {
             case 'counterspell': await flow._counterspell(); break;
             case 'cuttingWords': await flow._cuttingWords(); break;
             case 'eldritchBlast': await flow._eldritchBlast(); break;
+            case 'geniesWrath': await flow._geniesWrath(); break;
             case 'guidedStrike': await flow._guidedStrike(); break;
             case 'magicMissile': await flow._magicMissile(); break;
             case 'mirrorImage': await flow._mirrorImage(); break;
             case 'parry': await flow._parry(); break;
             case 'potentSpellcasting': await flow._potentSpellcasting(); break;
             case 'precisionAttack': await flow._precisionAttack(); break;
+            case 'radiantSoul': await flow._radiantSoul(); break;
             case 'rayOfEnfeeblement': await flow._rayOfEnfeeblement(); break;
             case 'scorchingRay': await flow._scorchingRay(); break;
             case 'shield': await flow._shield(); break;
@@ -2279,6 +2281,29 @@ export class workflow extends framework {
         }
     }
 
+    async _geniesWrath(){
+        if(!this.itemData.isAttack || !this.hasItem({itemName: "The Genie"}) || !this.hasHitTargets || !this.source.actor.id) return
+        if(!(this.getFlag(this.source.actor, 'geniesWrath') >= this.now)){ 
+            const item = this.source.actor.items.find(i => i.name.includes("Genie's Vessel: Genie's Wrath"))
+            if(!item) return 
+            const itemName = item.name.replace("Genie's Vessel: Genie's Wrath ","")
+            const useGeniesWrath = await this.yesNo({img: item.img})
+            if(useGeniesWrath){
+                await this.setFlag(this.source.actor, {'geniesWrath': this.now})
+                let damageType = 'piercing'
+                switch (itemName){
+                    case "(Djinni)": damageType = 'thunder'; break;
+                    case "(Dao)": damageType = 'bludgeoning'; break;
+                    case "(Efreeti)": damageType = 'fire'; break; 
+                    case "(Marid)": damageType = 'cold'; break;
+                }
+                await this.damage({type: damageType, dice: `${this.sourceData.prof}d1`, targets: [this.firstTarget], show: false, itemData: item})
+                this.message( `${this.name} uses Genie's Wrath to deal ${this.sourceData.prof} ${damageType} damage`, {title: "Genie's Wrath"})
+                this.generateEffect(this.firstTarget)
+            }
+        }
+    }
+
     async _grease(){
         this.setItem('Grease Effect', this.source.actor)
         if(!this.item.id) return
@@ -2739,6 +2764,21 @@ export class workflow extends framework {
             }
         } else {
             if(!this.hasEffect()) await this.addActiveEffect({effectName: 'Produce Flame', origin: this.source.actor.uuid, uuid: this.source.actor.uuid})
+        }
+    }
+
+    async _radiantSoul(){
+        if(!this.hasEffect() || !this.hasHitTargets || !this.source.actor.id || this.item?.isHealing) return
+        if(!(this.getFlag(this.source.actor, 'radiantSoul') >= this.now)){ 
+            const item = this.getItem()
+            if(!item) return 
+            const useRadiantSoul = await this.yesNo({img: item.img})
+            if(useRadiantSoul){
+                await this.setFlag(this.source.actor, {'radiantSoul': this.now})
+                await this.damage({type: 'radiant', dice: `${this.sourceData.prof}d1`, targets: [this.firstTarget], show: false})
+                this.message( `${this.name} uses Radiant Soul to deal ${this.sourceData.prof} radiant damage`, {title: 'Radiant Soul'})
+                this.generateEffect(this.firstTarget)
+            }
         }
     }
 

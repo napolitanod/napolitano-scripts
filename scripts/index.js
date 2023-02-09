@@ -201,6 +201,13 @@ Hooks.once("midi-qol.midiReady", () => {
         if(game.settings.get("napolitano-scripts", "mirror-image")) results.push(workflow.playAsync('mirrorImage', data, {hook: hook}))
         await Promise.all(results)
     });
+    
+    HOOKIDS['midi-qol.preDamageRoll'] = Hooks.on("midi-qol.preDamageRoll", async (data) => {
+        const hook = "midi-qol.preDamageRoll", results = [];
+        if(game.settings.get("napolitano-scripts", "genies-wrath")) results.push(workflow.playAsync('geniesWrath', data, {hook: hook}))   
+        if(game.settings.get("napolitano-scripts", "radiant-soul")) results.push(workflow.playAsync('radiantSoul', data, {hook: hook}))   
+        await Promise.all(results)
+    });
 
     HOOKIDS['midi-qol.preDamageRollComplete'] = Hooks.on("midi-qol.preDamageRollComplete", async (data) => {
         const hook = "midi-qol.preDamageRollComplete", results = [];
@@ -208,13 +215,12 @@ Hooks.once("midi-qol.midiReady", () => {
         switch(data.item?.name){
              case 'Eldritch Blast': results.push(workflow.playAsync('eldritchBlast', data, {hook: hook})); break;
         }
-
         if(game.settings.get("napolitano-scripts", "potent-spellcasting")) results.push(workflow.playAsync('potentSpellcasting', data, {hook: hook}))
         if(game.settings.get("napolitano-scripts", "arcane-firearm")) results.push(workflow.playAsync('arcaneFirearm', data, {hook: hook}))
         //wraps damage, do last
         if(game.settings.get("napolitano-scripts", "rayOfEnfeeblement")) results.push(workflow.playAsync('rayOfEnfeeblement', data, {hook: hook}))
         if(game.settings.get("napolitano-scripts", "cutting-words")) results.push(workflow.playAsync('cuttingWords', data, {hook: hook}))
-        if(game.settings.get("napolitano-scripts", "parry")) results.push(workflow.playAsync('parry', data, {hook: hook}))
+        if(game.settings.get("napolitano-scripts", "parry")) results.push(workflow.playAsync('parry', data, {hook: hook}))     
         
         await Promise.all(results)
     });
