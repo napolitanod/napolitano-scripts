@@ -1048,8 +1048,8 @@ export class framework {
         return {success: success, roll: saveRoll, document: document, actor: actor}
     }
 
-    async rollSaveDamage(document = this.firstTarget, {damage = 'half', dc = this.sourceData.spelldc, source = this.item.name, type = 'str', fastforward = true, disadvantage = false, advantage = false, flavor = ''} = {}, damageData){
-        const result = await(this.rollSave(document, {dc: dc, source: source, type:type, fastforward: fastforward, disadvantage: disadvantage, advantage: advantage, flavor: flavor}))
+    async rollSaveDamage(document = this.firstTarget, {damage = 'half', dc = this.sourceData.spelldc, source = this.item.name, type = 'str', show = false, fastforward = true, disadvantage = false, advantage = false, flavor = ''} = {}, damageData){
+        const result = await(this.rollSave(document, {dc: dc, source: source, type:type, show:show, fastforward: fastforward, disadvantage: disadvantage, advantage: advantage, flavor: flavor}))
         if(result.success && damage === 'none') return result
         if(damageData && (!result.success || damage !== 'none')) await this.damage(Object.assign(damageData, {half: result.success && damage === 'half' ? true : false}))
         return result
@@ -1568,6 +1568,7 @@ export class workflow extends framework {
             case 'combatTurnUpdateEvents': flow._combatTurnUpdateEvents(); break;
             case 'combatRoundUpdateEvents': flow._combatRoundUpdateEvents(); break;
             case 'darkness': flow._darkness(); break;
+            case 'dawn': flow._dawn(); break;
             case 'deathWard': flow._deathWard(); break;
             case 'deleteCombat': flow._deleteCombat(); break;
             case 'disarmingAttack': flow._disarmingAttack(); break;
@@ -1760,6 +1761,7 @@ export class workflow extends framework {
                break;
             case 'NAP-EOT-0':
                 await this._auraEffectsWorkflow(effectors.filter(u => u.name === 'Grease'), [target], 'grease')
+                await this._auraEffectsWorkflow(effectors.filter(u => u.name === 'Dawn'), [target], 'dawn')
                 break;
             case 'NAP-EOT-5':
                 await this._auraEffectsWorkflow(effectors.filter(u => u.name === 'Dust Devil'), [target], 'dustDevil')
@@ -2083,6 +2085,12 @@ export class workflow extends framework {
             if(game.modules.get('token-attacher')?.active) await tokenAttacher.attachElementsToToken(this.walls, this.source.token.id)
         }
         await this.heavilyObscure()
+    }
+
+    async _dawn(){
+        this.setItem('Dawn Effect', this.source.actor)
+        if(!this.item.id) return
+        await this.rollSaveDamage(this.firstTarget, {dc: this.itemData.dc, type: "con", show: true}, {dice: '4d10', type: 'radiant'}) 
     }
 
     async _deathWard(){

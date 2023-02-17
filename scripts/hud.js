@@ -3,12 +3,14 @@ import {hudHover, hudHoverOut} from "./tooltip.js";
 import {macros} from './macros.js';
 
 export function buildHud(html, token){
-    let combatactions = $('<div>').addClass("tah-actions")
+    let combatactions = $('<div>').addClass("tah-actions").addClass("napolitano-tah-actions")
     for (const [k,option] of Object.entries(HUDOPTIONS).sort(([,a],[,b]) => a.name.localeCompare(b.name))){
         combatactions.append(
-            $('<div>').addClass("tah-action").addClass("toggle").addClass("active").append(
+            $('<div>').addClass("tah-action").append(
                 $('<button>').data("data-id", {token: token.id, ruleset: k}).click(_run).append(
-                    $('<span>').addClass("tah-action-button-content").html(option.name)
+                    $('<span>').addClass("tah-action-button-content").append(
+                            $('<div>').addClass("tah-action-button-text").html(option.name)
+                        )
                 )
             )
         )
@@ -18,7 +20,7 @@ export function buildHud(html, token){
             $('<div>').addClass("tah-category-button-text").html('Combat')
             )
         )
-    const subcategory = $('<div>').addClass("tah-subcategories-wrapper").addClass("expand-down").append($('<div>').addClass("tah-subcategories").append($('<div>').addClass("tah-subcategory").attr("data-show-title","true").append($('<div>').addClass("tah-subtitle").addClass("disable-edit").attr("data-type","system").attr("id","combat_actions").attr("data-has-derived-subcategories", "false").html('Actions')).append(combatactions)))
+    const subcategory = $('<div>').addClass("tah-subcategories-wrapper").addClass("expand-down").append($('<div>').addClass("tah-subcategories").addClass("napolitano-tah-subcategories").append($('<div>').addClass("tah-subcategory").attr("data-has-actions","true").attr("data-show-title","true").append($('<div>').addClass("tah-subtitle").addClass("disable-edit").attr("data-type","system").attr("id","combat_actions").attr("data-has-derived-subcategories", "false").html('Actions')).append(combatactions)))
     const category = $('<div>').addClass("tah-category").attr('id', 'tah-category-combatactions').attr('data-type', 'custom').hover(_hudCategoryHover, _hudCategoryHoverOut).append(titlebutton).append(subcategory)
     $(html).find(`div[id="tah-category-attributes"]`).after(category)
     return html
