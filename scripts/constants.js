@@ -288,6 +288,10 @@ export const NAPOLITANOCONFIG = {
             sound: 0
         }
     },
+    dawn: {
+        killIn: {minutes: 1},
+        name: "Dawn"
+    },
     daylight: {
         killIn: {minutes: 60},
         name: "Daylight"

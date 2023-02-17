@@ -401,7 +401,7 @@ HOOKIDS['updateItem'] = Hooks.on("updateItem", async (data, change, options, use
         if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.name)){
             if("equipped" in change?.system) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: !change.system.equipped});
         }
-        if(options.diff && "uses" in change?.system && change.system.uses.value === 0 && data.system?.uses?.per === "charges") workflow.play('zeroChargeDestroy', data, {hook: hook});    
+        if(options.diff && change?.system && "uses" in change?.system && change.system.uses.value === 0 && data.system?.uses?.per === "charges") workflow.play('zeroChargeDestroy', data, {hook: hook});    
     }
 });
 

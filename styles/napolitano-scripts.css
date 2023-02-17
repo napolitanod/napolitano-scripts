@@ -98,3 +98,12 @@
     height: 60px;
     margin-right: 6px;
 }
+
+.napolitano-tah-subcategories {
+    width: 350px !important;
+}
+
+.napolitano-tah-actions {
+    display: grid !important;
+    grid-template-columns: repeat(3, 110px);
+}

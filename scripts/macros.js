@@ -48,6 +48,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'createBonfire': await macro._createBonfire(); break;
             case 'createEldritchCannon': await macro._createEldritchCannon(); break;
             case 'darkness': await macro._darkness(); break;
+            case 'dawn': await macro._dawn(); break;
             case 'daylight': await macro._daylight(); break;
             case 'disarm': await macro._disarm(); break;
             case 'dislodgeFrom': await macro._dislodgeFrom(); break;
@@ -265,7 +266,7 @@ game.napolitano.macros(args, 'createBonfire', options)
                 Item: {
                 "Clenched Fist": {
                     "system":{
-                        "attackBonus": this.sourceData.spellAttack,     
+                        "attackBonus": `${this.sourceData.spellAttack} - @prof`,     
                         "damage.parts": [
                             [`${4 + (this.upcastAmount*2)}d8[force]`, "force"]
                         ]
@@ -273,14 +274,16 @@ game.napolitano.macros(args, 'createBonfire', options)
                     },
                 "Crushing Hand (Grappling Damage)": {
                     "system":{    
-                        "damage.parts": [
-                            [`${2 + (this.upcastAmount*2)}d6[bludgeoning]`, "bludgeoning"]
-                        ]
+                        "damage":{
+                            "parts": [
+                                [`${2 + (this.upcastAmount*2)}d6[bludgeoning] + ${this.sourceData.spellMod}`, "bludgeoning"]
+                            ]
+                            }
                         }
                     },
                 "Forceful Hand": {
                     "system":{    
-                        "flavor": `The hand attempts to shove the target up to ${5 + (this.sourceData.spellMod*5)} feet`
+                        "chatFlavor": `The hand attempts to shove the target up to ${5 + (this.sourceData.spellMod*5)} feet`
                         }
                     }
                 }
@@ -436,6 +439,18 @@ game.napolitano.macros(args, 'createBonfire', options)
 
     async _darkness(){
         await this.summon();
+    }
+
+    async _dawn(){
+        this.summonData.updates = {
+            embedded: { 
+                Item: {
+                    "Dawn Effect": {
+                        "system.save": {ability:"con", dc: this.sourceData.spelldc, scaling:"flat"}
+                    }
+            }}
+        }
+        await this.summon()
     }
 
     async _daylight(){
@@ -867,6 +882,7 @@ game.napolitano.macros(args, 'createBonfire', options)
         if(!this.firstTarget) return this.error('You must target a token!')
         const targetSize = this.getSize(this.firstTarget)
         if(SIZES[targetSize] - SIZES[this.sourceData.size] > 1) return this.error('You cannot grapple a target that is over 1 size larger than you!')
+        if(this.name === "Bigby's Hand" && SIZES[targetSize] <= 2) options['overrides'] = {source: {advantage: true}}
         const bypass = this.hasEffect(this.firstTarget, 'Incapacitated')
         if(!bypass) await this.contest(options)
         if(bypass || this.contestData?.won){
@@ -1358,11 +1374,13 @@ game.napolitano.macros(args, 'createBonfire', options)
     }
 
     async _shove(){
+        const options = {}
         if(!this.firstTarget) return this.error('You must target a token!')
         const targetSize = this.getSize(this.firstTarget)
         if(SIZES[targetSize] - SIZES[this.sourceData.size] > 1) return this.error('You cannot shove a target that is over 1 size larger than you!')
+        if(this.name === "Bigby's Hand" && SIZES[targetSize] <= 2) options['overrides'] =  {source: {advantage: true}}
         const bypass = this.hasEffect(this.firstTarget, 'Incapacitated')
-        if(!bypass) await this.contest()
+        if(!bypass) await this.contest(options)
         if(bypass || this.contestData.won){   
             await wait(2000) 
             if(this.ruleset === 'shoveProne') {
