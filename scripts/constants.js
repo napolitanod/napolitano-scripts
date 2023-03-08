@@ -417,6 +417,14 @@ export const NAPOLITANOCONFIG = {
         name: "Form of Dread",
         prompt: "Use Form of Dread to frighten?"
     },
+    gazerEyeRays: {
+        table: {
+            compendium: "Napolitano Roll Table",
+            compendiumBackup: "DDB Roll Table",
+            name: "Gazer Eye Rays"
+        },
+        name: "Eye Rays"
+    },
     geniesWrath: {
         effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Explosion/Explosion_03_Regular_PurplePink_400x400.webm', scale: 1, wait: 100}},
         name: "Genie's Wrath",
