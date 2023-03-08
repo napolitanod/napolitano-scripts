@@ -69,6 +69,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'flamingSphere': await macro._flamingSphere(); break;
             case 'fogCloud': await macro._fogCloud(); break;
             case 'formOfDread': await macro._formOfDread(); break;
+            case 'gazerEyeRays': await macro._gazerEyeRays(); break;
             case 'genericContest': await macro._genericContest(); break;
             case 'guardianOfFaith': await macro._guardianOfFaith(); break;
             case 'goodberry': await macro._goodberry(); break;
@@ -316,6 +317,7 @@ game.napolitano.macros(args, 'createBonfire', options)
         if(item) result = await this.useItem(item)
         if(result.hitTargets.size){
             const target = result.hitTargets.values().next().value
+            if(target && this.cantripScale > 1) await this.damage({targets: [target], dice: `${this.cantripScale - 1}d8`, type: 'thunder'})
             await this.addActiveEffect({effectName: 'Booming Blade', uuid: target.actor.uuid, origin: this.source.actor.uuid})
         }
     }
@@ -866,6 +868,12 @@ game.napolitano.macros(args, 'createBonfire', options)
             await this.source.actor.update({data:{attributes: {hp: {temp: tempHp}}}})
             this.message(`${this.name} gains ${tempHp} temp HP`,{title: 'Form of Dread'})
         }
+    }
+
+    async _gazerEyeRays(){
+        await this.rollTable();
+        this.message(`${this.name} Rolls a ${this.tableRollResult} when choosing which eye stalk to unleash a ray from`, {title: 'Eye Ray Selected'})
+        await this.useItem(this.getItem(this.tableRollText))
     }
 
     async _genericContest(){

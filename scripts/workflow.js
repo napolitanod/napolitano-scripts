@@ -219,7 +219,7 @@ export class framework {
         return {
             baseSpellLevel: this.item.system.level,
             damageParts: this.item.system.damage?.parts ?? [],
-            damageType: this.item.system.damage?.parts?.[0]?.[1],
+            damageType: this.item.system.damage?.parts?.[0]?.[1] ?? '',
             dc: this.item.system.save.dc,
             isAttack: ["mwak","rwak","msak","rsak"].includes(this.item.system.actionType) ? true : false,
             isDamage: game.dnd5e.config.damageTypes[this.item.system.damage?.parts?.[0]?.[1]] ? true : false,
@@ -1948,13 +1948,12 @@ export class workflow extends framework {
      * @returns 
      */
     async _colossusSlayer(){
-        if(!this.hasHitTargets || !this.source.actor || !this.data.attackRoll?.dice || !this.itemData.isWeaponAttack || !this.hasItem()) return
+        if(!this.hasHitTargets || !this.source.actor || !this.data.attackRoll?.dice || !this.itemData.isWeaponAttack || !this.hasItem() || this.item?.name === 'Colossus Slayer') return
         const hp = this.data.damageList.find(t => t.tokenId === this.firstHitTarget.id)?.oldHP;
-        const maxHp = this.firstHitTarget.actor?.system?.attributes?.hp?.max;
+        const maxHp = this.getMaxHP(this.firstHitTarget);
         if (hp !== undefined && maxHp !== undefined && hp >= maxHp) return;
         if(this.getFlag(this.source.actor, 'colossusSlayer') >= this.now) return
-        this.roll = await new Roll(`${this.isCritical ? 2 : 1}d8`).evaluate({async: true})
-        await this.damage({type: this.itemData.damageParts[0]?.[1] ?? "", targets: [this.firstHitTarget.id], itemData: this.getItem(), itemCardId: "new"})
+        await this.damage({dice: `${this.isCritical ? 2 : 1}d8`, type: this.itemData.damageType, targets: [this.firstHitTarget], itemData: this.getItem()})
         await this.setFlag(this.source.actor,{'colossusSlayer': this.now})
     }
 
