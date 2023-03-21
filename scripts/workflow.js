@@ -168,7 +168,7 @@ export class framework {
     }
     
     get hasActor(){
-        !Object.keys(this.source.actor).length ? false : true
+        return !Object.keys(this.source.actor).length ? false : true
     }
 
     get hasCombat(){
