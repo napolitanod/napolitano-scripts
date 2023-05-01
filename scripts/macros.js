@@ -89,6 +89,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             case 'lungingAttack': await macro._lungingAttack(); break;
             case 'mageHand': await macro._mageHand(); break;
             case 'magicalTinkering': await macro._magicalTinkering(); break;
+            case 'melfsMinuteMeteors': await macro._melfsMinuteMeteors(); break;
             case 'mirrorImage': await macro._mirrorImage(); break;
             case 'moonbeam': await macro._moonbeam(); break;
             case 'nathairsMischief': await macro._nathairsMischief(); break;
@@ -1227,6 +1228,16 @@ game.napolitano.macros(args, 'createBonfire', options)
                 this.info('Roleplay the effects and take notes on items/journal as applicable.')
         }
         this.message(`${this.name} uses magical tinkering and imbues ${tinker}` , {title: 'Magical Tinkering'})
+    }
+
+    async _melfsMinuteMeteors(){
+        this.itemAddData.name = this.config.name
+        await this.addItemName()
+        const newItem = this.itemAddData.newItems?.[0]
+        const bonusUses = this.upcastAmount * 2
+        const totalUses = (6+bonusUses)
+        if(newItem && bonusUses) await this.updateItem({system: {uses: {value: totalUses, max: totalUses}}},  newItem)
+        this.message(`${this.name} adds ${totalUses} meteors to their inventory.`, {title: `Melf's Minute Meteors`})
     }
 
     async _mirrorImage(){
