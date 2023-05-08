@@ -110,7 +110,9 @@ Hooks.once('ready', async function() {
     });
 
     HOOKIDS['renderTokenActionHud'] = Hooks.on('renderTokenActionHud', async function(hud, html, options = {}){
-        const token = canvas.scene.tokens.find(t => t.id === options.actions?.tokenId)
+        //const token = canvas.scene.tokens.find(t => t.id === options.actions?.tokenId)
+        const token = hud?.token?.document
+        console.log(token)
         if(!token) return
         html = setHudHelp(html, token)
         html = buildHud(html, token)
