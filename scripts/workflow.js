@@ -372,7 +372,7 @@ export class framework {
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
         const res = await napolitanoScriptsSocket.executeAsGM("addActiveEffectDerived", actor.uuid, data);
-        if(res.length) this.message(message ?? `${data.label} was successfully added to ${document.name}.`, {whisper: "GM", title: "Active Effect Added"})
+        if(res.length) this.message(message ?? `${data.name} was successfully added to ${document.name}.`, {whisper: "GM", title: "Active Effect Added"})
     }
 
     async addActiveEffectToItem(document, label, changes=[], options = {}){
@@ -386,7 +386,7 @@ export class framework {
                 "seconds": options.duration ? options.duration : 0
             },
             "icon": "",
-            "label": label,
+            "name": label,
             "transfer": options.transfer ? options.transfer : false,
             flags: options.flags ? options.flags : {},         
             "tint": null
@@ -698,7 +698,7 @@ export class framework {
     }  
 
     getEffect(document = this.source.actor, effect = this.config.name, activeOnly = true){
-        return document.effects?.find(e => (!activeOnly || (!e.isSuppressed && !e.disabled)) && e.label === effect) 
+        return document.effects?.find(e => (!activeOnly || (!e.isSuppressed && !e.disabled)) && e.name === effect) 
     }  
 
     getFlag(document, flag = {}) {
@@ -811,7 +811,7 @@ export class framework {
     hasEffect(document = this.source.actor, effect = this.config.name, origin = ''){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
-        return actor.effects.find(e => !e.disabled && e.label === effect && (!origin || e.origin === origin)) ? true : false
+        return actor.effects.find(e => !e.disabled && e.name === effect && (!origin || e.origin === origin)) ? true : false
     }  
 
     hasImmunity(document = this.source.actor, immunity = this.config.name){
@@ -913,7 +913,7 @@ export class framework {
     isResponsive(document = this.source.actor){
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
-        return actor.effects.find(e => !e.disabled && INCAPACITATEDCONDITIONS.includes(e.label)) ? false : true
+        return actor.effects.find(e => !e.disabled && INCAPACITATEDCONDITIONS.includes(e.name)) ? false : true
     } 
 
     async killIn(tokens, time){
@@ -1753,7 +1753,7 @@ export class workflow extends framework {
                 await this._auraEffectsWorkflow(effectors.filter(u => u.actor?.items.find(i => i.name === 'Halo of Spores')), [target], 'haloOfSpores')
                 break;
             case 'NAP-MOV-ANY-15':
-                await this._auraEffectsWorkflow(effectors.filter(u => u.actor?.effects.find(i => i.label === 'Spirit Guardians')), [target], 'spiritGuardians')
+                await this._auraEffectsWorkflow(effectors.filter(u => u.actor?.effects.find(i => i.name === 'Spirit Guardians')), [target], 'spiritGuardians')
                 break;
             case 'NAP-MOV-OUT':
                 await target.name === 'Fog Cloud' ? this._auraEffectsWorkflow([target], [target], 'fogCloud') : this._auraEffectsWorkflow(effectors.filter(u => u.name === 'Fog Cloud'), [target], 'fogCloud', 'napolitano-aura-off')
@@ -1771,14 +1771,14 @@ export class workflow extends framework {
                 await this._auraEffectsWorkflow(effectors.filter(u => u.name === 'Moonbeam'), [target], 'moonbeam')
                 break;
             case 'NAP-SOT-5':
-                await this._auraEffectsWorkflow(effectors.filter(u => u.actor?.effects.find(i => i.label === 'Cloak of Flies')), [target], 'cloakOfFlies')
+                await this._auraEffectsWorkflow(effectors.filter(u => u.actor?.effects.find(i => i.name === 'Cloak of Flies')), [target], 'cloakOfFlies')
                 await this._auraEffectsWorkflow(auraTokens.filter(u => u.id === target.id && u.actor?.items.find(i => i.name === 'Whispering Aura')), this.proximityTokens.filter(t => t.id !== target.id), 'whisperingAura')
                 break;
             case 'NAP-SOT-10':
                 await this._auraEffectsWorkflow(effectors.filter(u => u.actor?.items.find(i => i.name === 'Halo of Spores')), [target], 'haloOfSpores')
                 break;
             case 'NAP-SOT-15':
-                await this._auraEffectsWorkflow(effectors.filter(u => u.actor?.effects.find(i => i.label === 'Spirit Guardians')), [target], 'spiritGuardians')
+                await this._auraEffectsWorkflow(effectors.filter(u => u.actor?.effects.find(i => i.name === 'Spirit Guardians')), [target], 'spiritGuardians')
                 break;
         }
     }
@@ -1926,7 +1926,7 @@ export class workflow extends framework {
                 if (remainingColorHp >= this.getHP(target) && !this.hasImmunity(target, "Blinded") & !this.hasEffect(target, "Blinded")) {
                     remainingColorHp -= this.getHP(target);
                     let effectData = [{
-                            label: this.config.name,
+                            name: this.config.name,
                             icon: "icons/magic/water/bubbles-air-water-pink.webp",
                             origin: this.data.uuid,
                             disabled: false,
@@ -2223,7 +2223,7 @@ export class workflow extends framework {
                         "disabled": false,
                         "duration": {"startTime": null},
                         "icon": "icons/skills/wounds/bone-broken-tooth-fang-red.webp",
-                        "label": "Fanged Bite: Empowered",
+                        "name": "Fanged Bite: Empowered",
                         "origin": this.item.uuid,
                         "transfer": false,
                         "flags": {
@@ -2668,7 +2668,7 @@ export class workflow extends framework {
     _packTactics(){
         if (this.hasItem() && this.itemData.isAttack){
             this.tokensInProximity(this.firstTarget) 
-            const bud = this.proximityTokens.find(t => t.id !== this.source.token.id && t.id !== this.firstTarget.id && !t.actor?.effects?.find(e => !e.disabled && INCAPACITATEDCONDITIONS.includes(e.label)) && t.disposition === this.tokenData.disposition)
+            const bud = this.proximityTokens.find(t => t.id !== this.source.token.id && t.id !== this.firstTarget.id && !t.actor?.effects?.find(e => !e.disabled && INCAPACITATEDCONDITIONS.includes(e.name)) && t.disposition === this.tokenData.disposition)
             if(bud) {
                 const options = {title: "Pack Tactics"}
                 if(getActorOwner(this.source.actor) === 'GM' && this.tokenData.disposition !== 1) options.whisper = "GM"
@@ -3031,8 +3031,8 @@ export class workflow extends framework {
     async _toggleEffectEffects(){
         if(this.hook === 'updateItem') this.activeEffect = this.getEffect(this.source.actor, this.item.name, !this.activeEffectDelete) 
         if(!this.activeEffect) return
-        const trackingId = {trackingId: this.activeEffect.label.replace(/\s+/g, '-').replace(/\W+/g, '')}
-        switch(this.activeEffect.label){
+        const trackingId = {trackingId: this.activeEffect.name.replace(/\s+/g, '-').replace(/\W+/g, '')}
+        switch(this.activeEffect.name){
             case 'Blind':
             case 'Blinded':
                 this.rulesubset = 'blind';
