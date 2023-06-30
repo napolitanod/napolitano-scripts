@@ -411,8 +411,8 @@ HOOKIDS['createActiveEffect'] = Hooks.on("createActiveEffect", async (data, chan
     if(game.user.isGM){
         const hook = "createActiveEffect";
         if(!data.isSuppressed){
-            if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.label)) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: false});
-            switch(data.label){
+            if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.name)) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: false});
+            switch(data.name){
                 case "Cloak of Flies": workflow.play('cloakOfFlies', data, {hook: hook, activeEffectDelete: false}); break;
                 case "Spirit Guardians": workflow.play('spiritGuardians', data, {hook: hook, activeEffectDelete: false}); break;
             }
@@ -423,8 +423,8 @@ HOOKIDS['createActiveEffect'] = Hooks.on("createActiveEffect", async (data, chan
 HOOKIDS['updateActiveEffect'] = Hooks.on("updateActiveEffect", async (data, change, options, userId) => {
     if(game.user.isGM){
         const hook = "updateActiveEffect";
-        if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.label)){
-            if(("disabled" in change || ("label" in change && !data.disabled)) && !data.isSuppressed){
+        if(game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.name)){
+            if(("disabled" in change || ("name" in change && !data.disabled)) && !data.isSuppressed){
                 workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: change.disabled});
             }
         }
@@ -434,8 +434,8 @@ HOOKIDS['updateActiveEffect'] = Hooks.on("updateActiveEffect", async (data, chan
 HOOKIDS['deleteActiveEffect'] = Hooks.on("deleteActiveEffect", async (data, options, userId) => {
     if(game.user.isGM){
         const hook = "deleteActiveEffect";
-        if (game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.label)) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: true});
-        switch(data.label){
+        if (game.settings.get("napolitano-scripts", "condition-effects") && EFFECTCONDITIONS.includes(data.name)) workflow.play('toggleEffectEffects', data, {hook: hook, activeEffectDelete: true});
+        switch(data.name){
             case "Aura of Vitality": workflow.play('auraOfVitality', data, {hook: hook, activeEffectDelete: true}); break;
             case "Cloak of Flies": workflow.play('cloakOfFlies', data, {hook: hook, activeEffectDelete: true}); break;
             case "Dragon's Breath": workflow.play('dragonsBreath', data, {hook: hook, activeEffectDelete: true}); break;

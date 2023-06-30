@@ -10,12 +10,12 @@ export class macros extends framework {
 
     /**
      * 
-const options = {
+const _napOps = {
     actor: actor,
     item: item,
     speaker: speaker
 }
-game.napolitano.macros(args, 'createBonfire', options)
+game.napolitano.macros(args, 'createBonfire', _napOps)
      * @param {*} args 
      * @param {*} ruleset 
      * @param {*} options 
@@ -611,7 +611,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             "disabled": false,
             "duration": {"startTime": null},
             "icon": "icons/magic/nature/tree-spirit-blue.webp",
-            "label": "Dream Devourer",
+            "name": "Dream Devourer",
             "origin": this.item.uuid,
             "transfer": false,
             "flags": {
@@ -990,7 +990,7 @@ game.napolitano.macros(args, 'createBonfire', options)
                             disabled: false,
                             duration: {rounds: null, seconds: secs, startRound: null, startTime: null, startTurn: null, turns: null},
                             icon: "icons/magic/perception/silhouette-stealth-shadow.webp",
-                            label: "Hexed"
+                            name: "Hexed"
                         }
                         this.tokenCreateEmbeddedDocuments(this.firstHitTarget.id, "ActiveEffect", [effectData]);
                     }
@@ -1011,7 +1011,7 @@ game.napolitano.macros(args, 'createBonfire', options)
             disabled: false,
             duration: {rounds: null, seconds: 60, startRound: null, startTime: null, startTurn: null, turns: null},
             icon: "icons/magic/death/projectile-skull-flaming-green.webp",
-            label: "Hexblade Cursed"
+            name: "Hexblade Cursed"
         }
         this.generateEffect(this.firstHitTarget)
         await this.tokenCreateEmbeddedDocuments(this.firstHitTarget.id, "ActiveEffect", [effectData]);              
@@ -1324,7 +1324,7 @@ game.napolitano.macros(args, 'createBonfire', options)
                         "changes": [{"key": "macro.CE","mode": 0, "value": eff,"priority": "0"}],
                         "disabled": false,
                         "duration": {"rounds": 1, "turns": 1},
-                        "label": eff,
+                        "name": eff,
                         "origin": this.source.actor.uuid,
                         "tint": "",
                         "transfer": false,
