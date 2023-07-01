@@ -354,14 +354,14 @@ HOOKIDS['renderCombatTracker'] = Hooks.on("renderCombatTracker", (app, html, dat
 });
 
 HOOKIDS['createToken'] = Hooks.on("createToken", async (document, options, userId) => {
-    if(game.settings.get("napolitano-scripts", "hp-roll") && !document.isLinked && document.actor?.type === "npc"){
-        const newHPRoll = await document.actor.rollNPCHitPoints({ chatMessage:false })
-        const newHP = newHPRoll?.total
-        if (newHP){
-            await document.actor.update({system:{attributes: {hp: {max: newHP, value: newHP}}}});
-        }
-    }
     if(game.user.isGM){
+        if(game.settings.get("napolitano-scripts", "hp-roll") && !document.isLinked && !document.hasPlayerOwner && document.actor?.type === "npc"){
+            const newHPRoll = await document.actor.rollNPCHitPoints({ chatMessage:false })
+            const newHP = newHPRoll?.total
+            if (newHP){
+                await document.actor.update({system:{attributes: {hp: {max: newHP, value: newHP}}}});
+            }
+        }
         const hook = "createToken";
         switch(document.name){
             case 'Darkness': workflow.play('darkness', document, {hook: hook}); break;
