@@ -796,6 +796,7 @@ const LINKDATACATEGORIES = {
 export const CONFIGS = [
     {id:"condition-effects", name:"Condition Effects"},
     {id:"dnd5e-posthooks", name:"DnD5e Post Hooks"},
+    {id:"hp-roll", name:"Roll HP On New NPC Tokens"},
     {id:"template-targeting", name:"Template Targeting"},
     {id:"link-items", name:"Link Items to Uses"},
     {id:"long-rest", name:"Long Rest"},
