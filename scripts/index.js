@@ -112,7 +112,6 @@ Hooks.once('ready', async function() {
     HOOKIDS['renderTokenActionHud'] = Hooks.on('renderTokenActionHud', async function(hud, html, options = {}){
         //const token = canvas.scene.tokens.find(t => t.id === options.actions?.tokenId)
         const token = hud?.token?.document
-        console.log(token)
         if(!token) return
         html = setHudHelp(html, token)
         html = buildHud(html, token)
@@ -222,7 +221,8 @@ Hooks.once("midi-qol.midiReady", () => {
         //wraps damage, do last
         if(game.settings.get("napolitano-scripts", "rayOfEnfeeblement")) results.push(workflow.playAsync('rayOfEnfeeblement', data, {hook: hook}))
         if(game.settings.get("napolitano-scripts", "cutting-words")) results.push(workflow.playAsync('cuttingWords', data, {hook: hook}))
-        if(game.settings.get("napolitano-scripts", "parry")) results.push(workflow.playAsync('parry', data, {hook: hook}))     
+        if(game.settings.get("napolitano-scripts", "parry")) results.push(workflow.playAsync('parry', data, {hook: hook})) 
+        if(game.settings.get("napolitano-scripts", "interception")) results.push(workflow.playAsync('interception', data, {hook: hook}))         
         
         await Promise.all(results)
     });
@@ -422,6 +422,7 @@ HOOKIDS['createActiveEffect'] = Hooks.on("createActiveEffect", async (data, chan
             switch(data.name){
                 case "Cloak of Flies": workflow.play('cloakOfFlies', data, {hook: hook, activeEffectDelete: false}); break;
                 case "Spirit Guardians": workflow.play('spiritGuardians', data, {hook: hook, activeEffectDelete: false}); break;
+                case "Rage": workflow.play('totemSpiritBear', data, {hook: hook, activeEffectDelete: false}); break;
             }
         } 
     }   
@@ -448,6 +449,7 @@ HOOKIDS['deleteActiveEffect'] = Hooks.on("deleteActiveEffect", async (data, opti
             case "Dragon's Breath": workflow.play('dragonsBreath', data, {hook: hook, activeEffectDelete: true}); break;
             case "Mirror Image": workflow.playAsync('mirrorImage', data, {hook: hook, activeEffectDelete: true}); break;
             case "Spirit Guardians": workflow.play('spiritGuardians', data, {hook: hook, activeEffectDelete: true}); break;
+            case "Rage": workflow.play('totemSpiritBear', data, {hook: hook, activeEffectDelete: true}); break;
             case 'Torch': workflow.play('torch', data, {hook: hook, activeEffectDelete: true}); break;
         }
     }
