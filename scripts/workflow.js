@@ -1528,6 +1528,7 @@ export class workflow extends framework {
             case 'counterspell': await flow._counterspell(); break;
             case 'cuttingWords': await flow._cuttingWords(); break;
             case 'eldritchBlast': await flow._eldritchBlast(); break;
+            case 'interception': await flow._interception(); break;
             case 'geniesWrath': await flow._geniesWrath(); break;
             case 'guidedStrike': await flow._guidedStrike(); break;
             case 'magicMissile': await flow._magicMissile(); break;
@@ -1612,6 +1613,7 @@ export class workflow extends framework {
             case 'toggleEffectEffects': flow._toggleEffectEffects(); break;
             case 'tokenMovement': flow._tokenMovement(); break;
             case 'torch': flow._torch(); break;
+            case 'totemSpiritBear': flow._totemSpiritBear(); break;
             case 'whisperingAura': flow._whisperingAura(); break;
             case 'wildSurgeRetribution': flow._wildSurgeRetribution(); break;
             case 'witchBolt': flow._witchBolt(); break;
@@ -2481,6 +2483,47 @@ export class workflow extends framework {
         }
     }
 
+    async _interception(){
+        const originalRollTotal = this.data.damageRoll?.total  ?? 0
+        if(!this.itemData.isAttack || !originalRollTotal) return 
+        const results = []
+        for(const pl of canvas.tokens.placeables) {
+            this.hasItem({document: pl, itemName: 'Fighting Style: Interception'}) 
+            , this.isResponsive(pl)
+            , this.hasEffect(pl, 'Fighting Style: Interception') 
+            , !this.hasEffect(pl, 'Reaction')
+            , !this.source.token.id === pl.id
+        }
+        this.interceptors = canvas.tokens.placeables.filter(t => 
+                this.hasItem({document: t, itemName: 'Fighting Style: Interception'}) 
+                && this.isResponsive(t)
+                && this.hasEffect(t, 'Fighting Style: Interception') 
+                && !this.hasEffect(t, 'Reaction')
+                && !this.source.token.id === t.id        
+                )
+        if(!this.interceptors.length) return
+        for(const token of this.interceptors) {
+            this.tokensInProximity(token, 5)
+            if(this.proximityTokens.find(h => h.id !== token.id && this.firstHitTarget.id === h.id && h.disposition === token.disposition)){
+                results.push(this.yesNo({title: 'Interception', prompt: `The damage is <span class="napolitano-label">${originalRollTotal}</span>. Will ${token.name} use Interception to roll a superiority die and reduce the amount by that roll (you must be able to see the attacker)?`, owner: getActorOwner(token), document: token, img: this.getItem('Fighting Style: Interception', token)?.img}))
+            }
+        }
+        if(results.length){
+            await Promise.all(results).then(async (values)=>{
+                for (const value of values){
+                    if(value.yes){
+                        const roll = await this.rollDice(`1d10`)
+                        const mod = value.document.actor.system.attributes.prof
+                        await this.appendRoll(this.data.damageRoll, roll, {sign: -1, isDamage: true, mod: mod})
+                        this.message(`${value.document.name} uses Interception, reducing the damage dealt of ${originalRollTotal} by ${roll.total + mod}.`, {title: "Interception"})
+                        this.appendMessageMQ(`-${roll.total + mod} to damage due to Interception.`)
+                        this.addActiveEffect({effectName: 'Reaction', uuid: value.document.actor.uuid, origin: value.document.actor.uuid})
+                    }
+                }
+            })
+        }
+    }
+
     /**
      * Tested: v10
      * Rolls Intrusive Echoes table (on 1)
@@ -2782,8 +2825,8 @@ export class workflow extends framework {
             const useRadiantSoul = await this.yesNo({img: item.img})
             if(useRadiantSoul){
                 await this.setFlag(this.source.actor, {'radiantSoul': this.now})
-                await this.damage({type: 'radiant', dice: `${this.sourceData.prof}d1`, targets: [this.firstTarget], show: false})
-                this.message( `${this.name} uses Radiant Soul to deal ${this.sourceData.prof} radiant damage`, {title: 'Radiant Soul'})
+                await this.damage({type: 'radiant', dice: `${this.sourceData.level}d1`, targets: [this.firstTarget], show: false})
+                this.message( `${this.name} uses Radiant Soul to deal ${this.sourceData.level} radiant damage`, {title: 'Radiant Soul'})
                 this.generateEffect(this.firstTarget)
             }
         }
@@ -2988,6 +3031,20 @@ export class workflow extends framework {
                 await this.addTag(['NAP-SOT-15-SPIRITGUARDIANS','NAP-MOV-ANY-15-SPIRITGUARDIANS'])
                 break;
         } 
+    }
+
+    async _totemSpiritBear(){
+        const eff = "Totem Spirit: Bear"
+        if(this.hasItem({itemName: eff, document: this.source.actor})){
+            switch(this.hook){
+                case 'deleteActiveEffect':
+                    if(this.hasEffect(this.source.actor, eff)) await this.deleteEffect(this.source.actor, eff) 
+                    break;
+                case 'createActiveEffect':
+                    if(!this.hasEffect(this.source.actor, eff)) await this.addActiveEffect({effectName: eff, uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
+                    break;
+            } 
+        }
     }
     
     /**

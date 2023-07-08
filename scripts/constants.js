@@ -824,6 +824,7 @@ export const CONFIGS = [
     {id:"hex", name:"Hex"},
     {id:"hexblades-curse", name:"Hexblade's Curse"},
     {id:"hungry-jaws", name:"Hungry Jaws"},
+    {id:"interception", name:"Interception"},
     {id:"intrusive-echoes", name:"Intrusive Echoes"},
     {id:"mirror-image", name:"Mirror Image"},
     {id:"motivational-speech", name:"Motivational Speech"},
