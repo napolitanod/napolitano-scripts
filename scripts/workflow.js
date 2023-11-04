@@ -1,6 +1,6 @@
 import {napolitano} from "./napolitano-scripts.js";
 import {importActorIfNotExists, chat, choose, getActorOwner, promptTarget, getSpellData, isOwner, requestSkillCheck, useItem, wait, yesNo} from "./helpers.js";
-import {CONFIGS, EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, TEMPLATEMODIFICATION} from "./constants.js";
+import {getMonsterType, CONFIGS, EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, TEMPLATEMODIFICATION} from "./constants.js";
 import {napolitanoScriptsSocket} from "./index.js";
 import {macros} from "./macros.js";
 import {contest} from './contest.js';
@@ -736,6 +736,10 @@ export class framework {
         return actor.type === "character" ? actor.system.details.level : actor.system.details.spellLevel
     }
 
+    getLevelElseCR(document = this.source.actor){
+        return this.getType(document) === 'character' ? this.getLevel(document) : this.getCR(document)
+    }
+
     getLinkedTokenFromScene(actor = this.source.actor, scene = this.scene){
         return scene.tokens.find(t => t.actor?.id === actor.id && t.isLinked)
     }
@@ -801,6 +805,11 @@ export class framework {
 
     getTempHP(document = this.source.actor){
         return (document.actor ? document.actor.system?.attributes?.hp?.temp : document.system?.attributes?.hp?.temp) ?? 0
+    }
+
+    getType(document = this.source.actor){
+        const actor = document.actor ?? document
+        return actor.type
     }
 
     async halfRoll(roll = this.roll){
@@ -1481,6 +1490,7 @@ export class workflow extends framework {
                     this.source.actor = this.source.token.actor ?? {};
                 break;
             case 'dnd5e.useItem':
+                    this.targets = this.convertToTokenDocument(game.user.targets);
                     this.item = this.data.item;
                     this.source.actor = this.item.actor
                 break;
@@ -1600,6 +1610,7 @@ export class workflow extends framework {
             case 'packTactics': flow._packTactics(); break;
             case 'pan': flow._pan(); break;
             case 'passWithoutTrace': flow._passWithoutTrace(); break;
+            case 'polymorph': flow._polymorph(); break;
             case 'powerSurge': flow._powerSurge(); break;
             case 'produceFlame': flow._produceFlame(); break;
             case 'relentless': flow._relentless(); break;
@@ -2769,6 +2780,19 @@ export class workflow extends framework {
             this.message(`${this.name} gains a +10 bonus to their stealth roll due to Pass without Trace effect from ${bud.name}`, {title: 'Pass without Trace'})
         }
         return this.data.roll
+    }
+
+    async _polymorph(){
+        if(!this.firstTarget) return this.warn(`No tokens are targeted. Spell cast as theatre of the mind.`)
+        const cr = this.getLevelElseCR(this.firstTarget)
+        this.choices = await getMonsterType('beast', cr)
+        if(!this.choices.list.length) return console.log('No beasts found within the compendium for CR at this level or lower')
+        this.choice = await this.choose(this.choices.options, this.config.prompt, this.config.name)
+        this.beast = this.choices.list.find(b => b.id === this.choice)
+        if(!this.beast) return console.log('No beast returned from choice.')
+        const actor = this.firstTarget.actor ?? this.firstTarget
+        actor.transformInto(this.beast, CONFIG.DND5E.transformationPresets.polymorph.options)
+        this.message(`${this.firstTarget.name} polymorphed into a ${this.beast.name}`, {title: this.config.name})
     }
 
     async _potentSpellcasting(){

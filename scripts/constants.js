@@ -1,3 +1,10 @@
+export async function getMonsterType(type, cr = 999){
+    const pack = game.packs.get("napolitano-compendium.napolitano-monsters");
+    const data = await pack.getDocuments(); //await pack.getData()
+    const monsters = data.filter(a => a.system.details?.type?.value === type && a.system.details?.cr <= cr)
+    return {list: monsters, options: monsters.map(c => [c.id, c.name + ' (CR ' + c.system.details?.cr + ')']).sort(([,a],[,b]) => a.localeCompare(b))}
+}
+
 export function setConfigs(){
     DAMAGERESISTANTTYPES.push(...Object.entries(game.dnd5e.config.damageResistanceTypes).sort(([,a],[,b]) => a.localeCompare(b)))
     DAMAGETYPES.push(...Object.entries(game.dnd5e.config.damageTypes).sort(([,a],[,b]) => a.localeCompare(b)))
@@ -534,6 +541,10 @@ export const NAPOLITANOCONFIG = {
         name: "Magical Tinkering",
         options: [`Light: External Object`, 'Light: On Self', 'Light: On Target', 'Other: External Object', 'Other'],
     },
+    manifestEcho: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuff01_02_Regular_Grey_400x400.webm', scale: 1.25}},
+        name: "Echo Knight"
+    },
     melfsMinuteMeteors : {
         item: {
             compendium: "Napolitano Items",
@@ -578,6 +589,10 @@ export const NAPOLITANOCONFIG = {
     passWithoutTrace: {
         name: "Pass without Trace",
         effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuff01_03_Regular_Grey_400x400.webm', scale: 1}}
+    },
+    polymorph: {
+        name: "Polymorpth",
+        prompt: "Choose a beast to polymorph the target into."
     },
     potentSpellcasting: {
         effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Explosion/Explosion_03_Regular_GreenOrange_400x400.webm', scale: 1, wait: 100}},
@@ -832,6 +847,7 @@ export const CONFIGS = [
     {id:"necrotic-shroud", name:"Necrotic Shroud"},
     {id:"pack-tactics", name:"Pack Tactics"},
     {id:"parry", name:"Parry"},
+    {id:"polymorph", name:"Polymorph"},
     {id:"potent-spellcasting", name:"Potent Spellcasting"},
     {id:"precision-attack", name:"Precision Attack"},
     {id:"radiant-soul", name:"Radiant Soul"},
@@ -864,6 +880,8 @@ export const LINKDATA = [
     {item: 'Channel Divinity: Radiance of the Dawn', resources: LINKDATACATEGORIES.divinity, matchOn: "feat", retrieve: "feat", amount: 1},
     {item: 'Channel Divinity: Guided Strike', resources: LINKDATACATEGORIES.divinity, matchOn: "feat", retrieve: "feat", amount: 1},
     {item: 'Channel Divinity: Turn Undead', resources: LINKDATACATEGORIES.divinity, matchOn: "feat", retrieve: "feat", amount: 1},
+    {item: 'Channel Divinity: Champion Challenge', resources: LINKDATACATEGORIES.divinity, matchOn: "feat", retrieve: "feat", amount: 1},
+    {item: 'Channel Divinity: Turn the Tide', resources: LINKDATACATEGORIES.divinity, matchOn: "feat", retrieve: "feat", amount: 1},
     {item: 'Harness Divine Power', resources: LINKDATACATEGORIES.divinity, matchOn: "feat", retrieve: "feat", amount: 1},
     {item: 'Maneuvers: Parry', resources: LINKDATACATEGORIES.superiority, matchOn: "feat", retrieve: "feat", amount: 1},
     {item: 'Maneuvers: Precision Attack', resources: LINKDATACATEGORIES.superiority, matchOn: "feat", retrieve: "feat", amount: 1},
@@ -884,6 +902,15 @@ export const LINKDATA = [
 ]
 
 export const SPIRITUALWEAPONS ={
+    greatAxe:{
+        green: 'GreatAxe01_02_Spectral_Green'
+    }, 
+    greatSword:{
+        green: 'GreatSword01_02_Spectral_Green'
+    }, 
+    greatClub:{
+        green: 'GreatClub01_02_Spectral_Green'
+    },
     mace: {
         blue: 'Mace01_01_Spectral_Blue',
         orange: 'Mace01_01_Spectral_Orange',
@@ -898,12 +925,24 @@ export const SPIRITUALWEAPONS ={
         green: 'Maul01_01_Spectral_Green',
         red: 'Maul01_01_Spectral_Red'
     },
+    quarterstaff: {
+        green: 'Quarterstaff02_02_Spectral_Green',
+        greenCrystal: 'Quarterstaff03_02_Spectral_Green',
+        greenRamsHead: 'Quarterstaff04_02_Spectral_Green'
+    },
+    rapier: {
+        green: 'Rapier01_02_Spectral_Green'
+    },
     scythe: {
         blue: 'Scythe01_02_Spectral_Blue',
         orange: 'Scythe01_02_Spectral_Orange',
         purple: 'Scythe01_02_Spectral_Purple',
         green: 'Scythe01_02_Spectral_Green',
-        red: 'Scythe01_02_Spectral_Red'
+        red: 'Scythe01_02_Spectral_Red',
+        white: 'Scythe01_02_Spectral_White'
+    },
+    spear: {
+        green: 'Spear01_02_Spectral_Green'
     },
     sword: {
         blue: 'Sword01_01_Spectral_Blue',
@@ -911,5 +950,11 @@ export const SPIRITUALWEAPONS ={
         purple: 'Sword01_01_Spectral_Purple',
         green: 'Sword01_01_Spectral_Green',
         red: 'Sword01_01_Spectral_Red'
+    },
+    trident: {
+        green: 'Trident01_02_Spectral_Green'
+    },
+    warhammer : {
+        green: 'Warhammer01_02_Spectral_Green'
     }
 }
