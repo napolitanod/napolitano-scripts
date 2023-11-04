@@ -29,7 +29,7 @@ export function chat(message, options = {}){
 }
 
 export async function choose(options = [], prompt = ``, title = 'Please choose', {img = '', gm = false, player = ''}={}){
-    let dialog, result, time = 20000, alteredTitle = title + (player ? ` (${player} Prompted)` : '');
+    let dialog, result, time = 50000, alteredTitle = title + (player ? ` (${player} Prompted)` : '');
     const query = new Promise((resolve) => {
         const dialog_options = (options[0] instanceof Array)
             ? options.map(o => `<option value="${o[0]}">${o[1]}</option>`).join(``)
@@ -250,7 +250,7 @@ export async function useItem(itemUuid, options = {}, config = {}){
 
 export const wait = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
-export async function yesNo(title = '', prompt = 'Continue?', {img = '', gm = false, player = '', time = 20000}={}){
+export async function yesNo(title = '', prompt = 'Continue?', {img = '', gm = false, player = '', time = 50000}={}){
     let dialog, result, alteredPrompt = prompt + (player ? ` (${player} Prompted)` : '');
     const finalPrompt = img ? `<div class="napolitano-yes-no-img"><img src="${img}"/><div>${alteredPrompt}</div></div>` : `<p>${alteredPrompt}</p>`
     const query = new Promise((resolve, reject) => {

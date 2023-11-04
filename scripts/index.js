@@ -106,6 +106,10 @@ Hooks.once('ready', async function() {
 
     HOOKIDS['dnd5e.useItem'] = Hooks.on("dnd5e.useItem", async (item, options, data) => {
         const hook = "dnd5e.useItem";
+        switch(item.name){
+            case 'Polymorph':
+                if(game.settings.get("napolitano-scripts", "polymorph")){workflow.play('polymorph', {item: item}, {hook: hook})}; break;
+        }
         if(['Counterspell', 'Dispell Magic'].includes(item.name)) workflow.play('powerSurge', {item: item}, {hook: hook})    
     });
 

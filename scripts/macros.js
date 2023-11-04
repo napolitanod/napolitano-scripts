@@ -88,6 +88,7 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'lesserRestoration': await macro._lesserRestoration(); break;
             case 'lungingAttack': await macro._lungingAttack(); break;
             case 'mageHand': await macro._mageHand(); break;
+            case 'manifestEcho': await macro.manifestEcho(); break;
             case 'magicalTinkering': await macro._magicalTinkering(); break;
             case 'melfsMinuteMeteors': await macro._melfsMinuteMeteors(); break;
             case 'mirrorImage': await macro._mirrorImage(); break;
@@ -1230,6 +1231,27 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         this.message(`${this.name} uses magical tinkering and imbues ${tinker}` , {title: 'Magical Tinkering'})
     }
 
+    async manifestEcho(){
+        this.summonData.updates = {
+            actor: {
+                system:{
+                    abilities: this.source.actor.system.abilities,
+                    traits: {
+                        size: this.getSize(this.source.actor)
+                    },
+                    details: {
+                        cr: this.sourceData.level
+                    }
+                }
+            },
+            token: {texture: {src: this.tokenData.img}},
+            embedded: { 
+                Item: this.source.actor.items.filter(i => i.type === 'weapon')
+            }
+        }
+        await this.summon();
+    }
+
     async _melfsMinuteMeteors(){
         this.itemAddData.name = this.config.name
         await this.addItemName()
@@ -1432,7 +1454,7 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
     async _spiritualWeapon(){//tested v10
         const weapon = await this.choose([['sword', 'Sword'], ['mace', 'Mace'], ['scythe', 'Scythe'], ['maul', 'Maul']] , 'Choose the form the spectral weapon takes:', 'Weapon Type')
         const color = await this.choose([['blue', 'Blue'], ['green', 'Green'], ['orange', 'Orange'], ['purple', 'Purple'], ['red', 'Red']], 'Choose the color of the weapon', 'Weapon Color')
-        const path = (weapon && color) ? `modules/jb2a_patreon/Library/2nd_Level/Spiritual_Weapon/SpiritualWeapon_${SPIRITUALWEAPONS[weapon][color]}_${weapon === 'scythe' ? '300x300' : '200x200'}.webm` : `modules/jb2a_patreon/Library/2nd_Level/Spiritual_Weapon/SpiritualWeapon_Mace01_01_Spectral_Blue_200x200.webm`; 
+        const path = (weapon && color) ? `modules/jb2a_patreon/Library/2nd_Level/Spiritual_Weapon/SpiritualWeapon_${SPIRITUALWEAPONS[weapon][color]}_${weapon === 'scythe' ? '300x300' : (['greatAxe', 'greatSword', 'greatClub','rapier', 'scythe', 'spear', 'trident', 'warhammer'].includes(weapon)? '400x400' : '200x200')}.webm` : `modules/jb2a_patreon/Library/2nd_Level/Spiritual_Weapon/SpiritualWeapon_Mace01_01_Spectral_Blue_200x200.webm`; 
         this.summonData.updates = {
             token: {texture: {src: path}},
             embedded: { 
