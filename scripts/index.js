@@ -2,7 +2,7 @@ import {napolitano} from "./napolitano-scripts.js";
 import {note} from "./note.js";
 import {api} from "./api.js";
 import {initiateLinking} from "./link-item-resource.js";
-import {CONFIGS, EFFECTCONDITIONS, HOOKIDS, setConfigs} from "./constants.js";
+import {CONFIGS, EFFECTCONDITIONS, HOOKIDS, HOOKEDITEMUSAGECONSUMPTIONITEMS, HOOKEDUSEITEMITEMS, setConfigs} from "./constants.js";
 import {tokenCreateEmbeddedDocuments, addActiveEffectDerived, addItem, chat, choose, deleteItem, destroyItem, killIn, logIt, promptTarget, requestSkillCheck, updateActor, updateItem, updatePrototypeToken, updateToken, useItem, yesNo} from "./helpers.js";
 import { workflow } from "./workflow.js";
 export let napolitanoScriptsSocket; //var for socketlib
@@ -104,13 +104,17 @@ Hooks.once('ready', async function() {
         }
     }); 
 
-    HOOKIDS['dnd5e.useItem'] = Hooks.on("dnd5e.useItem", async (item, options, data) => {
+    HOOKIDS['dnd5e.useItem'] = Hooks.on("dnd5e.useItem", async (item, config, options, template) => {
         const hook = "dnd5e.useItem";
-        switch(item.name){
-            case 'Polymorph':
-                if(game.settings.get("napolitano-scripts", "polymorph")){workflow.play('polymorph', {item: item}, {hook: hook})}; break;
-        }
+        const hooked = HOOKEDUSEITEMITEMS[item.name]
+        if(hooked) workflow.play(hooked, {item: item, config: config, options: options, template: template}, {hook: hook});
         if(['Counterspell', 'Dispell Magic'].includes(item.name)) workflow.play('powerSurge', {item: item}, {hook: hook})    
+    });
+
+    HOOKIDS['dnd5e.itemUsageConsumption'] = Hooks.on("dnd5e.itemUsageConsumption", async (item, config, options, usage) => {
+        const hook = "dnd5e.itemUsageConsumption";
+        const hooked = HOOKEDITEMUSAGECONSUMPTIONITEMS[item.name]
+        if(hooked) workflow.play(hooked, {item: item, config: config, options: options, usage:usage}, {hook: hook})
     });
 
     HOOKIDS['renderTokenActionHud'] = Hooks.on('renderTokenActionHud', async function(hud, html, options = {}){
