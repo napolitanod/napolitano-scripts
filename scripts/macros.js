@@ -53,7 +53,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'disarm': await macro._disarm(); break;
             case 'dislodgeFrom': await macro._dislodgeFrom(); break;
             case 'dodge': await macro._dodge(); break;
-            case 'divineSmite': await macro._divineSmite(); break;
             case 'dragonsBreath': await macro._dragonsBreath(); break;
             case 'dragonVessel': await macro._dragonVessel(); break;
             case 'dreamDevourer': await macro._dreamDevourer(); break;
@@ -474,33 +473,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             await wait(2000) 
             this.message(`${this.name} successfully dislodges the hostile creature!`, {title: 'Dislodge Creature'})
         }
-    }
-
-    async _divineSmite(){
-        if (!this.hasHitTargets) return
-        let numDice = 1 + this.spellLevel;
-        if (this.hasItem({itemName: "Improved Divine Smite"})) numDice += 1;
-        if (["undead", "fiend"].includes(this.getActorType(this.firstHitTarget))) numDice += 1;
-        new Dialog({
-            title: 'Critical Hit?',
-            content: `<p>Was the attack a critical hit?</p>`,
-            buttons: {
-                confirmed: {
-                    label: "Yes",
-                    callback: async () => {
-                        this.roll = await new Roll(`${numDice * 2}d8`).evaluate({async: true});
-                        this.damage({type: 'radiant', targets: [this.firstHitTarget]})
-                    }
-                },
-                cancel: {
-                    label: "No",
-                    callback: async () => {
-                        this.roll = await new Roll(`${numDice}d8`).evaluate({async: true});
-                        this.damage({type: 'radiant', targets: [this.firstHitTarget]})
-                    }
-                }
-            }
-        }).render(true);
     }
 
     async _dodge(){

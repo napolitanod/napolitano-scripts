@@ -1588,6 +1588,7 @@ export class workflow extends framework {
             case 'deathWard': flow._deathWard(); break;
             case 'deleteCombat': flow._deleteCombat(); break;
             case 'disarmingAttack': flow._disarmingAttack(); break;
+            case 'divineSmite': flow._divineSmite(); break;
             case 'dragonsBreath': flow._dragonsBreath(); break;
             case 'dustDevil': flow._dustDevil(); break;
             case 'echoingMind': flow._echoingMind(); break;
@@ -2143,6 +2144,33 @@ export class workflow extends framework {
         this.message(`Superiority Dice reduced by one on ${this.name}.`,{whisper: "GM"})
     }
 
+    async _divineSmite(){
+        if (!this.hasTargets) return
+        let numDice = 1 + this.spellLevel;
+        if (this.hasItem({itemName: "Improved Divine Smite"})) numDice += 1;
+        if (["undead", "fiend"].includes(this.getActorType(this.firstTarget))) numDice += 1;
+        new Dialog({
+            title: 'Critical Hit?',
+            content: `<p>Was the attack a critical hit?</p>`,
+            buttons: {
+                confirmed: {
+                    label: "Yes",
+                    callback: async () => {
+                        this.roll = await new Roll(`${numDice * 2}d8`).evaluate({async: true});
+                        this.damage({type: 'radiant', targets: [this.firstTarget]})
+                    }
+                },
+                cancel: {
+                    label: "No",
+                    callback: async () => {
+                        this.roll = await new Roll(`${numDice}d8`).evaluate({async: true});
+                        this.damage({type: 'radiant', targets: [this.firstTarget]})
+                    }
+                }
+            }
+        }).render(true);
+    }
+
     async _dragonsBreath(){
         this.item = this.source.actor.items.find(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.dragonsBreath)
         if(this.item.id) await this.deleteItem({})
@@ -2428,14 +2456,14 @@ export class workflow extends framework {
 
     async _haloOfSpores(){
         this.setItem()
-        if(!this.hasItem() || this.sourceData.disposition === this.firstHitTarget.disposition || this.hasEffect(this.source.actor, 'Reaction')) return
+        if(!this.hasItem() || this.sourceData.disposition === this.firstTarget.disposition || this.hasEffect(this.source.actor, 'Reaction')) return
         const proceed = this.sourceData.owner ? await this.yesNo({owner: this.sourceData.owner}) : await this.yesNo()
         if(proceed){
             let dice = this.source.actor.system.scale['circle-of-spores']?.['halo-of-spores']?.formula ?? '1d4'
             if(this.hasEffect(this.source.actor, 'Symbiotic Entity')) dice = dice.replace('1d','2d')
-            this.generateEffect(this.firstHitTarget)
-            const result = await this.rollSaveDamage(this.firstHitTarget, {damage: 'none', dc: (8 + this.sourceData.wisdomMod + this.sourceData.prof), type: 'con'}, {targets: [this.firstHitTarget], dice: dice, type: 'necrotic'})
-            const text = result.success ? `${this.firstHitTarget.name} succeeds their saving throw and avoids the noxious spores!` : `${this.firstHitTarget.name} sustains ${this.damageData.roll.result} damage from halo of spores on a ${this.damageData.roll.formula} roll!`
+            this.generateEffect(this.firstTarget)
+            const result = await this.rollSaveDamage(this.firstTarget, {damage: 'none', dc: (8 + this.sourceData.wisdomMod + this.sourceData.prof), type: 'con'}, {targets: [this.firstTarget], dice: dice, type: 'necrotic'})
+            const text = result.success ? `${this.firstTarget.name} succeeds their saving throw and avoids the noxious spores!` : `${this.firstTarget.name} sustains ${this.damageData.roll.result} damage from halo of spores on a ${this.damageData.roll.formula} roll!`
             this.message(text, {title: 'Halo of Spores'})
             this.addActiveEffect({effectName: 'Reaction', uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
         }

@@ -302,7 +302,7 @@ Hooks.once("midi-qol.midiReady", () => {
         }
         switch(data.item?.name){
              case 'Animate Dead': workflow.play('animateDead', data, {hook: hook}); break;
-             case 'Halo of Spores': workflow.play('haloOfSpores', data, {hook: hook}); break;
+             //case 'Halo of Spores': workflow.play('haloOfSpores', data, {hook: hook}); break;
              case 'Fanged Bite': workflow.play('fangedBite', data, {hook: hook}); break;
              case "Melf's Acid Arrow": workflow.play('melfsAcidArrow', data, {hook: hook}); break;
         }

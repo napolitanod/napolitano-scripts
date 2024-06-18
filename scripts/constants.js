@@ -832,8 +832,10 @@ const LINKDATACATEGORIES = {
 }
 
 export const HOOKEDUSEITEMITEMS = {
+    'Divine Smite': 'divineSmite',
     'Figurine of Wondrous Power (Golden Lions)': 'figurineOfWonderousPowerLions',
     'Grease': 'grease',
+    'Halo of Spores': 'haloOfSpores',
     "Maximilian's Earthen Grasp": 'maximiliansEarthenGrasp',
     'Polymorph': 'polymorph',
     'Spare the Dying': 'spareTheDying',
