@@ -6,8 +6,8 @@ export async function getMonsterType(type, cr = 999){
 }
 
 export function setConfigs(){
-    DAMAGERESISTANTTYPES.push(...Object.entries(game.dnd5e.config.damageResistanceTypes).sort(([,a],[,b]) => a.localeCompare(b)))
-    DAMAGETYPES.push(...Object.entries(game.dnd5e.config.damageTypes).sort(([,a],[,b]) => a.localeCompare(b)))
+    DAMAGERESISTANTTYPES.push(...Object.entries(game.dnd5e?.config.damageTypes).map(k=> [k[0],k[1].label]))
+    DAMAGETYPES.push(...Object.entries(game.dnd5e?.config.damageTypes).map(k=> [k[0],k[1].label]))
     SKILLS.push(...Object.entries(game.dnd5e?.config.skills).map(k=> [k[0],k[1].label]))
     SKILLSKEYS.push(...Object.keys(game.dnd5e?.config.skills))
 }
@@ -95,6 +95,19 @@ export const PCS = {
     chenju: 'Chenju (Narbirt)', 
     wubbub: 'Wubbub'
 }
+
+export const SPELLSLOTS = {
+    "spell0": 0,
+    "spell1": 1,
+    "spell2": 2,
+    "spell3": 3,
+    "spell4": 4,
+    "spell5": 5,
+    "spell6": 6,
+    "spell7": 7,
+    "spell8": 8,
+    "spell9": 9
+ };
 
 export const SPELLS = {
     "1": "1st level spell",
@@ -545,6 +558,10 @@ export const NAPOLITANOCONFIG = {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuff01_02_Regular_Grey_400x400.webm', scale: 1.25}},
         name: "Echo Knight"
     },
+    maximiliansEarthenGrasp: {
+        killIn: {minutes: 1},
+        name: "Maximilian's Earthen Grasp"
+    },
     melfsMinuteMeteors : {
         item: {
             compendium: "Napolitano Items",
@@ -776,6 +793,12 @@ export const NAPOLITANOCONFIG = {
         killIn: {minutes: 60},
         name: "Unseen Servant"
     },
+    varallasClawsOfDarkness: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuffRing02_01_Dark_Black_400x400.webm', scale: 1.5}},
+        sounds: {pre: {file:'modules/soundfxlibrary/Combat/Single/Spell%20Impact/spell-impact-2.mp3'}},
+        killIn: {minutes: 1},
+        name: "Varalla's Claws of Darkness"
+    },
     zeroChargeDestroy: {
         rollOneOnTwenty: ['Staff of Frost', 'Wand of Magic Missiles', 'Wand of Fear']
     }
@@ -806,6 +829,25 @@ const LINKDATACATEGORIES = {
     wildshape: {0: {target: 'Wild Shape', type: "charges"}},
     sorcerypoints: {0: {target: 'Sorcery Points', type: "charges"}},
     bardicInspiration: {0: {target: 'Bardic Inspiration', type: "charges"}}
+}
+
+export const HOOKEDUSEITEMITEMS = {
+    'Divine Smite': 'divineSmite',
+    'Figurine of Wondrous Power (Golden Lions)': 'figurineOfWonderousPowerLions',
+    'Grease': 'grease',
+    'Halo of Spores': 'haloOfSpores',
+    "Maximilian's Earthen Grasp": 'maximiliansEarthenGrasp',
+    'Polymorph': 'polymorph',
+    'Spare the Dying': 'spareTheDying',
+    'Spike Growth': 'spikeGrowth',
+    'Symbiotic Entity': 'symbioticEntity',
+    "Varalla's Claws of Darkness": 'varallasClawsOfDarkness'
+}
+
+export const HOOKEDITEMUSAGECONSUMPTIONITEMS = {
+    'Flaming Sphere': 'flamingSphere',
+    'Healing Spirit': 'healingSpirit',
+    'Mage Hand': 'mageHand'
 }
 
 export const CONFIGS = [
@@ -847,7 +889,6 @@ export const CONFIGS = [
     {id:"necrotic-shroud", name:"Necrotic Shroud"},
     {id:"pack-tactics", name:"Pack Tactics"},
     {id:"parry", name:"Parry"},
-    {id:"polymorph", name:"Polymorph"},
     {id:"potent-spellcasting", name:"Potent Spellcasting"},
     {id:"precision-attack", name:"Precision Attack"},
     {id:"radiant-soul", name:"Radiant Soul"},

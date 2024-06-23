@@ -53,7 +53,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'disarm': await macro._disarm(); break;
             case 'dislodgeFrom': await macro._dislodgeFrom(); break;
             case 'dodge': await macro._dodge(); break;
-            case 'divineSmite': await macro._divineSmite(); break;
             case 'dragonsBreath': await macro._dragonsBreath(); break;
             case 'dragonVessel': await macro._dragonVessel(); break;
             case 'dreamDevourer': await macro._dreamDevourer(); break;
@@ -62,22 +61,18 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'experimentalElixer': await macro._experimentalElixer(); break;
             case 'falseLife': await macro._falseLife(); break;
             case 'featherOfDiatrymaSummoning': await macro._featherOfDiatrymaSummoning(); break;
-            case 'figurineOfWonderousPowerLions': await macro._figurineOfWonderousPowerLions(); break;
             case 'figurineOfWonderousPowerObsidianSteed': await macro._figurineOfWonderousPowerObsidianSteed(); break;
             case 'findFamiliar': await macro._findFamiliar(); break;
             case 'fireShield': await macro._fireShield(); break;
-            case 'flamingSphere': await macro._flamingSphere(); break;
             case 'fogCloud': await macro._fogCloud(); break;
             case 'formOfDread': await macro._formOfDread(); break;
             case 'gazerEyeRays': await macro._gazerEyeRays(); break;
             case 'genericContest': await macro._genericContest(); break;
             case 'guardianOfFaith': await macro._guardianOfFaith(); break;
             case 'goodberry': await macro._goodberry(); break;
-            case 'grease': await macro._grease(); break;
             case 'grapple': await macro._grapple(); break;
             case 'grapplingPin': await macro._grapplingPin(); break;
             case 'grapplingStrike': await macro._grapplingStrike(); break;
-            case 'healingSpirit': await macro._healingSpirit(); break;
             case 'hex': await macro._hex(); break;
             case 'hexbladesCurse': await macro._hexbladesCurse(); break;
             case 'helpAttack': await macro._helpAttack(); break;
@@ -87,7 +82,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'infuseItem': await macro._infuseItem(); break;
             case 'lesserRestoration': await macro._lesserRestoration(); break;
             case 'lungingAttack': await macro._lungingAttack(); break;
-            case 'mageHand': await macro._mageHand(); break;
             case 'manifestEcho': await macro.manifestEcho(); break;
             case 'magicalTinkering': await macro._magicalTinkering(); break;
             case 'melfsMinuteMeteors': await macro._melfsMinuteMeteors(); break;
@@ -106,8 +100,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'shoveBack': await macro._shove(); break;
             case 'shoveProne': await macro._shove(); break;
             case 'silveryBarbs': await macro._silveryBarbs(); break;
-            case 'spareTheDying': await macro._spareTheDying(); break;
-            case 'spikeGrowth': await macro._spikeGrowth(); break;
             case 'spiritualWeapon': await macro._spiritualWeapon(); break;
             case 'stormSphere': await macro._stormSphere(); break;
             case 'summonAberration': await macro._summonAberration(); break;
@@ -116,7 +108,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'staffOfThePython': await macro._staffOfThePython(); break;
             case 'summonBlight': await macro._summonBlight(); break;
             case 'sustainedLife': await macro._sustainedLife(); break;
-            case 'symbioticEntity': await macro._symbioticEntity(); break;
             case 'theRightToolForTheJob': await macro._theRightToolForTheJob(); break;
             case 'tollTheDead': await macro._tollTheDead(); break;
             case 'tumble': await macro._tumble(); break;
@@ -129,6 +120,8 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
     async _initialize(){
         super._initializePre()
         this.speaker = this.options.speaker ?? {};
+        
+        napolitano.log(false, `Initializing...`, this); 
         if(this.feature.hud){
             this.source.token = this.data.token;
             this.source.actor = this.source.token.actor ?? {};
@@ -300,7 +293,7 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         this.generateEffect(this.firstTarget, {source: this.source.token})
         const type = this.getActorType(this.firstTarget) 
         this.roll = await new Roll(`${type==='plant' ? `${((this.spellLevel+4) * 8)}d1` : `${this.spellLevel+4}d8`}`).evaluate({async: true});   
-        const saveRoll = await this.firstTarget.actor.rollAbilitySave("con", {flavor: `${CONFIG.DND5E.abilities["con"]} DC ${this.sourceData.spelldc} Blight`, fastforward: true, disadvantage: type==='plant' ? true : false })   
+        const saveRoll = await this.firstTarget.actor.rollAbilitySave("con", {flavor: `${CONFIG.DND5E.abilities["con"].label} DC ${this.sourceData.spelldc} Blight`, fastforward: true, disadvantage: type==='plant' ? true : false })   
         if (["undead", "construct"].includes(type)) return this.message(`${this.firstTarget.name} resists the blight because they are a ${type}`, {title: 'Blight Resisted', whisper: "GM"});
         await this.damage({type: "necrotic", targets: [this.firstTarget], half: saveRoll.total >= this.sourceData.spelldc ? true : false})
     }
@@ -480,33 +473,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             await wait(2000) 
             this.message(`${this.name} successfully dislodges the hostile creature!`, {title: 'Dislodge Creature'})
         }
-    }
-
-    async _divineSmite(){
-        if (!this.hasHitTargets) return
-        let numDice = 1 + this.spellLevel;
-        if (this.hasItem({itemName: "Improved Divine Smite"})) numDice += 1;
-        if (["undead", "fiend"].includes(this.getActorType(this.firstHitTarget))) numDice += 1;
-        new Dialog({
-            title: 'Critical Hit?',
-            content: `<p>Was the attack a critical hit?</p>`,
-            buttons: {
-                confirmed: {
-                    label: "Yes",
-                    callback: async () => {
-                        this.roll = await new Roll(`${numDice * 2}d8`).evaluate({async: true});
-                        this.damage({type: 'radiant', targets: [this.firstHitTarget]})
-                    }
-                },
-                cancel: {
-                    label: "No",
-                    callback: async () => {
-                        this.roll = await new Roll(`${numDice}d8`).evaluate({async: true});
-                        this.damage({type: 'radiant', targets: [this.firstHitTarget]})
-                    }
-                }
-            }
-        }).render(true);
     }
 
     async _dodge(){
@@ -763,12 +729,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         this.logNote(`Feather of Diatryma Summoning was used`)
     }
 
-    async _figurineOfWonderousPowerLions(){
-        await this.summon();
-        await this.summon();
-        this.logNote(`Figurine of Wonderous Power: Lions was used and cannot be used for another 7 days.`)
-    }
-
     async _figurineOfWonderousPowerObsidianSteed(){
         await this.summon();
         this.logNote(`Figurine of Wonderous Power: Obsidian Steed was used and cannot be used for another 5 days.`)
@@ -840,20 +800,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         if(choice) await this.addActiveEffect({effectName: `Fire Shield - ${choice}`, uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
     }
 
-    async _flamingSphere(){//tested v10
-        this.summonData.updates = {
-            embedded: { 
-                Item: {
-                    "Fire": {
-                        "system.damage.parts": [[this.spellLevel + "d6","fire"]],
-                        "system.save": {ability:"dex", dc: this.sourceData.spelldc, scaling:"flat"}
-                    }
-                }
-            }
-        }
-        await this.summon();
-    }
-
     async _fogCloud(){
         this.summonData.updates = {
             token: { 
@@ -916,40 +862,12 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         await this._grapple({contestId: 'grapple', overrides:{source:{parts: [this.sourceData.superiorityDie]}}})
     }
 
-    async _grease(){
-        this.summonData.updates = {
-            embedded: { 
-                Item: {
-                    "Grease Effect": {
-                        system:{save: {ability:"dex", dc: this.sourceData.spelldc, scaling:"flat"}}
-                    }
-                }
-            }
-        }
-        await this.summon();
-        await this.deleteTemplates()
-    }
-
     async _guardianOfFaith(){//tested v10
         this.summonData.updates = {
             embedded: { 
                 Item: {
                     "Guardian of Faith Aura": {
                         "system.save": {dc: this.sourceData.spelldc}
-                    }
-                }
-            }
-        }
-        await this.summon();
-    }
-
-    async _healingSpirit(){//tested v10
-        this.summonData.updates = {
-            embedded: { 
-                Item: {
-                    "Healing Spirit": {
-                        "system.damage.parts": [[`${this.upcastAmount + 1}d6`,"healing"]],
-                        "system.uses": {value: this.sourceData.spellMod + 1, max: this.sourceData.spellMod + 1, per:"day"}
                     }
                 }
             }
@@ -1206,10 +1124,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         await this.useItem(item)
     }
 
-    async _mageHand(){//tested v10
-        await this.summon();
-    }
-
     async _magicalTinkering(){
         const tinker = await this.choose(this.config.options, 'What ye be tinkering?', 'Magical Tinkering', {owner: this.sourceData.owner, img: this.item.img})
         switch(tinker){
@@ -1246,7 +1160,7 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             },
             token: {texture: {src: this.tokenData.img}},
             embedded: { 
-                Item: this.source.actor.items.filter(i => i.type === 'weapon')
+                Item: this.source.actor.items.filter(i => i.type === 'weapon').reduce( (obj, item) => Object.assign(obj, { [item.name]: item }), {})
             }
         }
         await this.summon();
@@ -1439,16 +1353,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         const response = await this.promptTarget({title: 'Silvery Barbs Advantage', origin: this.source.actor.uuid, owner: this.sourceData.owner, event: 'Grant Silvery Barbs Advantage', prompt: `Select a target to grant advantage to on their next attack roll, saving throw or ability check.`})
         const target = this.scene.tokens.find(t => t.id === response.targets[0])
         if(target) this.addActiveEffect({effectName: 'Silvery Barbs Advantage', origin: response.origin, uuid: target.actor.uuid})
-    }
-
-    async _spareTheDying(){
-        if(!this.hasTargets || ['undead', 'construct'].includes(this.getActorType(this.firstHitTarget) || this.getHP(this.firstHitTarget))) return
-        await this.updateActor({actor: this.firstHitTarget, data: {"system.attributes.death": {success: 3, failure: 0}}})
-        this.message(`${this.firstHitTarget.name} has been spared death.`, {title: 'Spare the Dying'})
-    }
-
-    async _spikeGrowth(){
-        await this.summon();
     }
 
     async _spiritualWeapon(){//tested v10
@@ -1688,15 +1592,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             await this.updateItem({hitDiceUsed: hd[choice].system.hitDiceUsed + 1}, hd[choice])
             await this.rollDice(`1${hd[choice].system.hitDice}`)
             this.message(`${this.name} uses one of their ${hd[choice].name} Hit Die to add ${this.roll.total} to their saving throw`, {title: 'Sustained Life'})
-        }
-    }
-
-    async _symbioticEntity(){
-        const tempHp = 4 * this.sourceData.druidLevel
-        this.generateEffect(this.source.token)
-        if(tempHp > this.sourceData.tempHp) {
-            await this.source.actor.update({data:{attributes: {hp: {temp: tempHp}}}})
-            this.message(`${this.name} gains ${tempHp} temp HP`,{title: 'Symbiotic Entity'})
         }
     }
 

@@ -223,6 +223,7 @@ export async function updateActor(actorUuid, data){
     const actor = document.actor ?? document
     if(actor?.documentName !== 'Actor') return
     await actor.update(data)
+    napolitano.log(false, `${actor.name} updated`, data)
 }
 
 export async function updatePrototypeToken(actorUuid, data){

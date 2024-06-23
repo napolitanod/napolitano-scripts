@@ -1,6 +1,6 @@
 import {napolitano} from "./napolitano-scripts.js";
 import {importActorIfNotExists, chat, choose, getActorOwner, promptTarget, getSpellData, isOwner, requestSkillCheck, useItem, wait, yesNo} from "./helpers.js";
-import {getMonsterType, CONFIGS, EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, TEMPLATEMODIFICATION} from "./constants.js";
+import {getMonsterType, CONFIGS, EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, SPELLSLOTS, TEMPLATEMODIFICATION} from "./constants.js";
 import {napolitanoScriptsSocket} from "./index.js";
 import {macros} from "./macros.js";
 import {contest} from './contest.js';
@@ -261,6 +261,7 @@ export class framework {
     get sourceData(){
         if(!this.source.actor) return {}
         return {
+            abilities: this.source.actor.system.abilities, 
             arcaneFirearm: this.source.actor.items.filter(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.arcaneFirearm?.selected),
             artificerTools: this.source.actor.items.filter(i => i.flags?.['napolitano-scripts']?.rightToolForTheJob),
             artificerLevel: this.source.actor.classes.artificer?.system?.levels ?? 0,
@@ -358,7 +359,7 @@ export class framework {
         return {
             pre: async (template, update) => {
                 this.generateEffect(template);
-                await warpgate.wait(400);
+                await warpgate.wait(1000);
             },
         };
     }
@@ -658,7 +659,7 @@ export class framework {
                     s = s.atLocation(source)
                     .stretchTo(target)
                 } else {
-                    s = s.attachTo(target)
+                    s = s.atLocation(target)
                 }
                 if(effect.wait) s = s.wait(effect.wait)
                 if(effect.fadeIn) s = s.fadeIn(effect.fadeIn)
@@ -1029,7 +1030,7 @@ export class framework {
     }
 
     async rollCheck(document = this.firstTarget, {dc = this.sourceData.spelldc, source = this.item.name, type = 'str', chatMessage = false, show = false, fastforward = true, disadvantage = false, advantage = false, flavor = ''} = {}){
-        const checkName = CONFIG.DND5E.abilities[type];
+        const checkName = CONFIG.DND5E.abilities[type].label;
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
         const checkRoll = await actor.rollAbilityTest(type, {flavor: flavor ?? `${checkName} DC ${dc} ${source}`, chatMessage:chatMessage, fastForward: fastforward, advantage: advantage, disadvantage: disadvantage })  
@@ -1047,7 +1048,7 @@ export class framework {
     }
 
     async rollSave(document = this.firstTarget, {dc = this.sourceData.spelldc, source = this.item.name, type = 'str', chatMessage = false, show = false, fastforward = true, disadvantage = false, advantage = false, flavor = ''} = {}){
-        const saveName = CONFIG.DND5E.abilities[type];
+        const saveName = CONFIG.DND5E.abilities[type].label;
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
         const saveRoll = await actor.rollAbilitySave(type, {flavor: flavor ?? `${saveName} DC ${dc} ${source}`, chatMessage:chatMessage, fastForward: fastforward, advantage: advantage, disadvantage: disadvantage })  
@@ -1489,11 +1490,6 @@ export class workflow extends framework {
                     this.source.token = this.data ?? {};
                     this.source.actor = this.source.token.actor ?? {};
                 break;
-            case 'dnd5e.useItem':
-                    this.targets = this.convertToTokenDocument(game.user.targets);
-                    this.item = this.data.item;
-                    this.source.actor = this.item.actor
-                break;
             case 'dnd5e.restCompleted': 
                     this.source.actor = this.data ?? {};
                 break;
@@ -1509,6 +1505,15 @@ export class workflow extends framework {
                     this.source.actor = this.data.actor ?? {};
                     this.source.token = this.scene.tokens.find(t => t.actor?.id === this.source.actor.id)
                     this.roll = this.data.roll;
+                    break;
+            case 'dnd5e.itemUsageConsumption':
+            case 'dnd5e.useItem':
+                    this.targets = this.convertToTokenDocument(game.user.targets);
+                    this.item = this.data.item;
+                    this.source.actor = this.item.actor
+                    this.spellLevel = SPELLSLOTS[this.data.config.slotLevel]
+                    this.upcastAmount = this.spellLevel ? this.spellLevel - this.itemData.baseSpellLevel: 0;
+                    this.templateData.id = this.data.template?.[0]?.id;
                     break;
             case 'checkRoll':
                     this.source.actor = this.data.actor ?? {};
@@ -1583,16 +1588,20 @@ export class workflow extends framework {
             case 'deathWard': flow._deathWard(); break;
             case 'deleteCombat': flow._deleteCombat(); break;
             case 'disarmingAttack': flow._disarmingAttack(); break;
+            case 'divineSmite': flow._divineSmite(); break;
             case 'dragonsBreath': flow._dragonsBreath(); break;
             case 'dustDevil': flow._dustDevil(); break;
             case 'echoingMind': flow._echoingMind(); break;
             case 'fangedBite': flow._fangedBite(); break;
+            case 'figurineOfWonderousPowerLions': flow._figurineOfWonderousPowerLions(); break;
             case 'fireShield': flow._fireShield(); break;
+            case 'flamingSphere': flow._flamingSphere(); break;
             case 'fogCloud': flow._fogCloud(); break;
             case 'formOfDread': flow._formOfDread(); break;
             case 'grease': flow._grease(); break;
             case 'greenFlameBlade': flow._greenFlameBlade(); break;
             case 'haloOfSpores': flow._haloOfSpores(); break;
+            case 'healingSpirit': flow._healingSpirit(); break;
             case 'heatedBody': flow._heatedBody(); break;
             case 'hex': flow._hex(); break;
             case 'hexbladesCurse': flow._hexbladesCurse(); break;
@@ -1600,7 +1609,9 @@ export class workflow extends framework {
             case 'intrusiveEchoes': flow._intrusiveEchoes(); break;
             case 'layOnHands': flow._layOnHands(); break;
             case 'longRest': flow._longRest(); break;
+            case 'mageHand': flow._mageHand(); break;
             case 'marker': flow._marker(); break;
+            case 'maximiliansEarthenGrasp': flow._maximiliansEarthenGrasp(); break;
             case 'message': flow._message(); break;
             case 'melfsAcidArrow': flow._melfsAcidArrow(); break;
             case 'moonbeam': flow._moonbeam(); break;
@@ -1617,14 +1628,17 @@ export class workflow extends framework {
             case 'relentlessEndurance': flow._relentlessEndurance(); break;
             case 'shortRest': flow._shortRest(); break;
             case 'sleep': flow._sleep(); break;
+            case 'spareTheDying': flow._spareTheDying(); break;
             case 'spikeGrowth': flow._spikeGrowth(); break;
             case 'spiritGuardians': flow._spiritGuardians(); break;
+            case 'symbioticEntity': flow._symbioticEntity(); break;
             case 'tasteOfTheStones': flow._tasteOfTheStones(); break;
             case 'templateTargeting': flow._templateTargeting(); break;
             case 'toggleEffectEffects': flow._toggleEffectEffects(); break;
             case 'tokenMovement': flow._tokenMovement(); break;
             case 'torch': flow._torch(); break;
             case 'totemSpiritBear': flow._totemSpiritBear(); break;
+            case 'varallasClawsOfDarkness': flow._varallasClawsOfDarkness(); break;
             case 'whisperingAura': flow._whisperingAura(); break;
             case 'wildSurgeRetribution': flow._wildSurgeRetribution(); break;
             case 'witchBolt': flow._witchBolt(); break;
@@ -2130,6 +2144,33 @@ export class workflow extends framework {
         this.message(`Superiority Dice reduced by one on ${this.name}.`,{whisper: "GM"})
     }
 
+    async _divineSmite(){
+        if (!this.hasTargets) return
+        let numDice = 1 + this.spellLevel;
+        if (this.hasItem({itemName: "Improved Divine Smite"})) numDice += 1;
+        if (["undead", "fiend"].includes(this.getActorType(this.firstTarget))) numDice += 1;
+        new Dialog({
+            title: 'Critical Hit?',
+            content: `<p>Was the attack a critical hit?</p>`,
+            buttons: {
+                confirmed: {
+                    label: "Yes",
+                    callback: async () => {
+                        this.roll = await new Roll(`${numDice * 2}d8`).evaluate({async: true});
+                        this.damage({type: 'radiant', targets: [this.firstTarget]})
+                    }
+                },
+                cancel: {
+                    label: "No",
+                    callback: async () => {
+                        this.roll = await new Roll(`${numDice}d8`).evaluate({async: true});
+                        this.damage({type: 'radiant', targets: [this.firstTarget]})
+                    }
+                }
+            }
+        }).render(true);
+    }
+
     async _dragonsBreath(){
         this.item = this.source.actor.items.find(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.dragonsBreath)
         if(this.item.id) await this.deleteItem({})
@@ -2263,6 +2304,12 @@ export class workflow extends framework {
         }).render(true);
     }
 
+    async _figurineOfWonderousPowerLions(){
+        await this.summon();
+        await this.summon();
+        this.logNote(`Figurine of Wonderous Power: Lions was used and cannot be used for another 7 days.`)
+    }
+
     async _fireShield(){
         if(this.hasHitTargets && this.itemData.isMeleeWeaponAttack){
             this.hitTargets.forEach((value) => { 
@@ -2279,6 +2326,20 @@ export class workflow extends framework {
                 }
             })
         }
+    }
+
+    async _flamingSphere(){//tested v10
+        this.summonData.updates = {
+            embedded: { 
+                Item: {
+                    "Fire": {
+                        "system.damage.parts": [[this.spellLevel + "d6","fire"]],
+                        "system.save": {ability:"dex", dc: this.sourceData.spelldc, scaling:"flat"}
+                    }
+                }
+            }
+        }
+        await this.summon();
     }
 
     async _fogCloud(){
@@ -2325,10 +2386,24 @@ export class workflow extends framework {
     }
 
     async _grease(){
-        this.setItem('Grease Effect', this.source.actor)
-        if(!this.item.id) return
-        const saveRoll = await this.rollSave(this.firstHitTarget, {dc: this.itemData.dc, type: "dex"})
-        if(!saveRoll.success) await this.addActiveEffect({effectName: "Prone", uuid: this.firstTarget.actor.uuid, origin: this.source.actor})
+        if(this.hook === 'dnd5e.useItem'){
+            this.summonData.updates = {
+                embedded: { 
+                    Item: {
+                        "Grease Effect": {
+                            system:{save: {ability:"dex", dc: this.sourceData.spelldc, scaling:"flat"}}
+                        }
+                    }
+                }
+            }
+            await this.summon();
+            await this.deleteTemplates()
+        } else {
+            this.setItem('Grease Effect', this.source.actor)
+            if(!this.item.id) return
+            const saveRoll = await this.rollSave(this.firstHitTarget, {dc: this.itemData.dc, type: "dex"})
+            if(!saveRoll.success) await this.addActiveEffect({effectName: "Prone", uuid: this.firstTarget.actor.uuid, origin: this.source.actor})
+        }
     }
 
     async _greenFlameBlade(){
@@ -2381,18 +2456,34 @@ export class workflow extends framework {
 
     async _haloOfSpores(){
         this.setItem()
-        if(!this.hasItem() || this.sourceData.disposition === this.firstHitTarget.disposition || this.hasEffect(this.source.actor, 'Reaction')) return
+        if(!this.hasItem() || this.sourceData.disposition === this.firstTarget.disposition || this.hasEffect(this.source.actor, 'Reaction')) return
         const proceed = this.sourceData.owner ? await this.yesNo({owner: this.sourceData.owner}) : await this.yesNo()
         if(proceed){
             let dice = this.source.actor.system.scale['circle-of-spores']?.['halo-of-spores']?.formula ?? '1d4'
             if(this.hasEffect(this.source.actor, 'Symbiotic Entity')) dice = dice.replace('1d','2d')
-            this.generateEffect(this.firstHitTarget)
-            const result = await this.rollSaveDamage(this.firstHitTarget, {damage: 'none', dc: (8 + this.sourceData.wisdomMod + this.sourceData.prof), type: 'con'}, {targets: [this.firstHitTarget], dice: dice, type: 'necrotic'})
-            const text = result.success ? `${this.firstHitTarget.name} succeeds their saving throw and avoids the noxious spores!` : `${this.firstHitTarget.name} sustains ${this.damageData.roll.result} damage from halo of spores on a ${this.damageData.roll.formula} roll!`
+            this.generateEffect(this.firstTarget)
+            const result = await this.rollSaveDamage(this.firstTarget, {damage: 'none', dc: (8 + this.sourceData.wisdomMod + this.sourceData.prof), type: 'con'}, {targets: [this.firstTarget], dice: dice, type: 'necrotic'})
+            const text = result.success ? `${this.firstTarget.name} succeeds their saving throw and avoids the noxious spores!` : `${this.firstTarget.name} sustains ${this.damageData.roll.result} damage from halo of spores on a ${this.damageData.roll.formula} roll!`
             this.message(text, {title: 'Halo of Spores'})
             this.addActiveEffect({effectName: 'Reaction', uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
         }
     }
+
+    
+    async _healingSpirit(){//tested v10
+        this.summonData.updates = {
+            embedded: { 
+                Item: {
+                    "Healing Spirit": {
+                        "system.damage.parts": [[`${this.upcastAmount + 1}d6`,"healing"]],
+                        "system.uses": {value: this.sourceData.spellMod + 1, max: this.sourceData.spellMod + 1, per:"day"}
+                    }
+                }
+            }
+        }
+        await this.summon();
+    }
+
 
     /**
  * Tested: v10
@@ -2605,6 +2696,10 @@ export class workflow extends framework {
         s.play()
     }
 
+    async _mageHand(){//tested v10
+        await this.summon();
+    }
+    
     async _magicMissile(){
         if(!this.item.name === 'Magic Missile') return
         if(!this.data.options?.notCast && this.hook === 'midi-qol.preambleComplete'){
@@ -2618,6 +2713,22 @@ export class workflow extends framework {
                 this.generateEffect(this.firstTarget, {effect: NAPOLITANOCONFIG.shield.effects.pre})
             }
         }
+    }
+
+    async _maximiliansEarthenGrasp(){
+        this.summonData.updates = {
+            embedded: { 
+                Item: {
+                "Earthen Grasp - Crush": {
+                    "system.save": {ability:"str", dc: this.sourceData.spelldc, scaling:"flat"}
+                    },
+                "Earthen Grasp - Restrain": {
+                    "system.save": {ability:"str", dc: this.sourceData.spelldc, scaling:"flat"}
+                    }
+                }
+            }
+        }
+        await this.summon();
     }
 
     async _melfsAcidArrow(){
@@ -3032,9 +3143,19 @@ export class workflow extends framework {
         } 
     }
 
+    async _spareTheDying(){
+        if(!this.hasTargets || ['undead', 'construct'].includes(this.getActorType(this.firstTarget) || this.getHP(this.firstTarget))) return
+        await this.updateActor({document: this.firstTarget, data: {"system.attributes.death": {success: 3, failure: 0}}})
+        this.message(`${this.firstTarget.name} has been spared death.`, {title: 'Spare the Dying'})
+    }
+
     async _spikeGrowth(){
-        await this.damage({targets: [this.firstHitTarget], itemData: this.getItem('Spike Growth Effect'), dice: '2d4', type: 'piercing'})
-        this.message(`${this.firstHitTarget.name} walks across spiky terrain and sustains ${this.damageData.roll.result} damage!`, {title: 'Spike Growth'})
+        if(this.hook === 'dnd5e.useItem') {
+            await this.summon();
+        } else {
+            await this.damage({targets: [this.firstHitTarget], itemData: this.getItem('Spike Growth Effect'), dice: '2d4', type: 'piercing'})
+            this.message(`${this.firstHitTarget.name} walks across spiky terrain and sustains ${this.damageData.roll.result} damage!`, {title: 'Spike Growth'})
+        }
     }
 
     async _spiritGuardians(){
@@ -3055,6 +3176,15 @@ export class workflow extends framework {
                 await this.addTag(['NAP-SOT-15-SPIRITGUARDIANS','NAP-MOV-ANY-15-SPIRITGUARDIANS'])
                 break;
         } 
+    }
+
+    async _symbioticEntity(){
+        const tempHp = 4 * this.sourceData.druidLevel
+        this.generateEffect(this.source.token)
+        if(tempHp > this.sourceData.tempHp) {
+            await this.source.actor.update({data:{attributes: {hp: {temp: tempHp}}}})
+            this.message(`${this.name} gains ${tempHp} temp HP`,{title: 'Symbiotic Entity'})
+        }
     }
 
     async _totemSpiritBear(){
@@ -3142,6 +3272,35 @@ export class workflow extends framework {
     async _torch(){
         this.setItem('Torch')
         if (this.item?.id && !this.itemData.quantity) await this.deleteItem({message: "Torch is removed from " + this.source.actor.name + "'s inventory due to 0 quantitiy"}) 
+    }
+
+    async _varallasClawsOfDarkness(){
+        this.summonData.updates = {
+            actor: {
+                system:{
+                    abilities: this.sourceData.abilities,
+                    attributes: {
+                        hp: {
+                            max: this.sourceData.maxHp,
+                            value: this.sourceData.maxHp
+                        }
+                    }
+                }
+            },
+            embedded: { 
+                Item: {
+                "Lacerate": {
+                    "system":{
+                        "attackBonus": `${this.sourceData.spellAttack} - @prof`,
+                        "damage.parts": [
+                            [`${this.spellLevel}d10`, "necrotic"]
+                        ]
+                        }
+                    }
+                }
+            }
+        }
+        await this.summon();
     }
 
     async _wardingFlare(){
