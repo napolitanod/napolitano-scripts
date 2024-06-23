@@ -20,8 +20,8 @@
     ],
     "compatibility": {
         "minimum": "11",
-        "verified": "11",
-        "maximum": "11"
+        "verified": "12",
+        "maximum": "12"
     },
     "id": "napolitano-scripts",
     "readme": "https://github.com/napolitanod/napolitano-scripts/blob/main/README.md",
