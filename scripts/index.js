@@ -151,8 +151,8 @@ Hooks.once("midi-qol.midiReady", () => {
         }
     });
 
-    HOOKIDS['midi-qol.preambleComplete'] = Hooks.on('midi-qol.preambleComplete', async function(data){
-        const hook = "midi-qol.preambleComplete", results = [];
+    HOOKIDS['midi-qol.prePreambleComplete'] = Hooks.on('midi-qol.prePreambleComplete', async function(data){
+        const hook = "midi-qol.prePreambleComplete", results = [];
         if(data.templateId && game.settings.get("napolitano-scripts", "template-targeting")){
             workflow.play('templateTargeting', data, {hook: hook});   
         }
@@ -363,7 +363,7 @@ HOOKIDS['renderCombatTracker'] = Hooks.on("renderCombatTracker", (app, html, dat
 
 HOOKIDS['createToken'] = Hooks.on("createToken", async (document, options, userId) => {
     if(game.user.isGM){
-        if(game.settings.get("napolitano-scripts", "hp-roll") && !document.isLinked && !document.hasPlayerOwner && document.actor?.type === "npc"){
+        if(game.settings.get("napolitano-scripts", "hp-roll") && !document.isLinked && !document.hasPlayerOwner && document.actor?.type === "npc" && !document.flags?.[`${napolitano.FLAGS.NAPOLITANO}`]?.noHPRoll){
             const newHPRoll = await document.actor.rollNPCHitPoints({ chatMessage:false })
             const newHP = newHPRoll?.total
             if (newHP){

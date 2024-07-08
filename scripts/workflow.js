@@ -45,9 +45,10 @@ export class framework {
         this.scene = {},
         this.spellLevel = 0,
         this.summonData = {
-            callbacks: this._warpgateCallback,
             compendium: {},
-            options: {},
+            deletes: {
+                item: []
+            },
             summonedTokens: [],
             table: {},
             tableRollResult: {},
@@ -142,7 +143,7 @@ export class framework {
     }
 
     get currentCombatant(){
-        if(!this.hasCombat) return
+        if(!this.hasCombat || !this.combat.current?.tokenId) return
         return this.combat.scene.getEmbeddedDocument("Token", this.combat.current.tokenId)
     }
 
@@ -254,7 +255,7 @@ export class framework {
     }
 
     get previousCombatant(){
-        if(!this.hasCombat) return
+        if(!this.hasCombat || !this.combat.previous?.tokenId) return
         return this.combat.scene.getEmbeddedDocument("Token", this.combat.previous.tokenId)
     }
 
@@ -301,8 +302,10 @@ export class framework {
     }
 
     get summonUpdates(){
-        if(!this.source.token) return this.summonData.updates
-        return Object.assign(this.summonData.updates, {disposition: this.source.token.disposition})
+        const obj = {token: {}}
+        if(this.summonData.noHPRoll) obj.token[`flags.${napolitano.FLAGS.NAPOLITANO}.noHPRoll`] = true
+        if(this.source.token?.id) obj.token['disposition'] = this.source.token.disposition
+        return {updateData: Object.assign(this.summonData.updates, obj)}
     }
 
     get tableRollResult(){
@@ -353,15 +356,6 @@ export class framework {
             light: this.config.wallData?.light ?? 20,
             flags: this.config.wallData?.flags ?? {}
         }
-    }
-
-    get _warpgateCallback(){
-        return {
-            pre: async (template, update) => {
-                this.generateEffect(template);
-                await warpgate.wait(1000);
-            },
-        };
     }
 
     //{effectName: "Advantage on Next Attack", uuid: value.actor.uuid, origin: value.actor.uuid}
@@ -1157,15 +1151,31 @@ export class framework {
     }
 
     async summon(options={}){
-        let actor = options.name ?? this.config.name
+        let actor = options.name ?? this.config.name;
         if(options.table) {
             await this.rollTable()
             actor = this.tableRollText
         }
         await importActorIfNotExists(actor);     
-        this.summonData.summonedTokens = this.templateData.id ? await warpgate.spawnAt({x: this.templateData.location.x + (this.gridSize * game.actors.getName(actor).prototypeToken.width/2), y: this.templateData.location.y + (this.gridSize * game.actors.getName(actor).prototypeToken.height/2)}, actor, this.summonUpdates, this.summonData.callbacks, this.summonData.options) : await warpgate.spawn(actor, this.summonUpdates, this.summonData.callbacks, this.summonData.options);
+
+        this.summonData.summonedTokens = this.templateData.id ? await new Portal().addCreature(actor, this.summonUpdates).setLocation({x: this.templateData.location.x + (this.gridSize * game.actors.getName(actor).prototypeToken.width/2), y: this.templateData.location.y + (this.gridSize * game.actors.getName(actor).prototypeToken.height/2)}).spawn() : await new Portal().texture(this.summonTexture(actor)).addCreature(actor, this.summonUpdates).spawn();
+        this.generateEffect(this.summonData.summonedTokens[0])
+        if(this.summonData.deletes.item.length) await this._summonPostItemDelete()
         napolitano.log(false, `Summon ${actor}...`,this);
         if(this.config.killIn) this.killIn(this.summonData.summonedTokens, this.config.killIn)
+    }
+
+    async _summonPostItemDelete(){
+        this.summonData.summonedTokens.forEach((tk) => {
+            if(tk.actor?.items?.length){
+                let items = tk.actor.items.filter(i => this.summonData.deletes.item.find(i.name))
+                items.forEach((item) => {this.deleteItem(item)})
+            }
+        }) 
+    }
+
+    summonTexture(name){
+        return game.actors.getName(name)?.prototypeToken?.texture?.src ?? "icons/svg/dice-target.svg"
     }
 
     targetWithTemplate(){
@@ -1438,7 +1448,7 @@ export class workflow extends framework {
                 this.source.actor = this.data.actor ?? {};
                 break
             case 'midi-qol.preItemRoll':
-            case 'midi-qol.preambleComplete':
+            case 'midi-qol.prePreambleComplete':
             case 'midi-qol.preAttackRoll':
             case 'midi-qol.preAttackRollComplete':
             case 'midi-qol.AttackRollComplete':
@@ -1470,7 +1480,7 @@ export class workflow extends framework {
                     this.combat = this.data;
                     this.scene = this.combat.scene ?? canvas.scene;
                     this.source.token = this.scene.getEmbeddedDocument("Token", this.combat.current.tokenId);
-                    this.source.actor = this.source.token.actor ?? {};
+                    if (this.source.token) this.source.actor = this.source.token.actor ?? {};
                 break;
             case 'deleteCombat': 
                     this.combat = this.data;
@@ -1511,6 +1521,7 @@ export class workflow extends framework {
                     this.targets = this.convertToTokenDocument(game.user.targets);
                     this.item = this.data.item;
                     this.source.actor = this.item.actor
+                    this.source.token = this.scene.tokens.find(t => t.actor?.id === this.source.actor.id)
                     this.spellLevel = SPELLSLOTS[this.data.config.slotLevel]
                     this.upcastAmount = this.spellLevel ? this.spellLevel - this.itemData.baseSpellLevel: 0;
                     this.templateData.id = this.data.template?.[0]?.id;
@@ -1565,6 +1576,7 @@ export class workflow extends framework {
         const flow = new workflow(ruleset, data, options)
         flow._initialize()
         switch(ruleset){
+            case 'accursedSpecter': flow._accursedSpecter(); break;
             case 'ancestralProtectors': flow._ancestralProtectors(); break;
             case 'animateDead': flow._animateDead(); break;
             case 'armorOfAgathys': flow._armorOfAgathys(); break;
@@ -1593,7 +1605,9 @@ export class workflow extends framework {
             case 'dustDevil': flow._dustDevil(); break;
             case 'echoingMind': flow._echoingMind(); break;
             case 'fangedBite': flow._fangedBite(); break;
+            case 'featherOfDiatrymaSummoning': flow._featherOfDiatrymaSummoning(); break;
             case 'figurineOfWonderousPowerLions': flow._figurineOfWonderousPowerLions(); break;
+            case 'figurineOfWonderousPowerObsidianSteed': flow._figurineOfWonderousPowerObsidianSteed(); break;
             case 'fireShield': flow._fireShield(); break;
             case 'flamingSphere': flow._flamingSphere(); break;
             case 'fogCloud': flow._fogCloud(); break;
@@ -1644,6 +1658,28 @@ export class workflow extends framework {
             case 'witchBolt': flow._witchBolt(); break;
             case 'zeroChargeDestroy': flow._zeroChargeDestroy(); break;
         }
+    }
+
+    async _accursedSpecter(){ //tested v10
+        this.summonData.updates = {
+            actor: {
+                system:{
+                    attributes: {
+                        hp: {
+                            temp: Math.floor(this.sourceData.warlockLevel/2)
+                        }
+                    },
+                    bonuses: {
+                        msak: {attack: this.sourceData.charismaMod},
+                        mwak: {attack: this.sourceData.charismaMod},
+                        rsak: {attack: this.sourceData.charismaMod},
+                        rwak: {attack: this.sourceData.charismaMod}
+                    }
+                }
+            }
+        }
+        this.summonData.noHPRoll = true
+        await this.summon();
     }
 
     /**
@@ -2017,7 +2053,7 @@ export class workflow extends framework {
             await Promise.all(results).then(async (values)=>{
                 const casts = values.filter(v => v.choice)
                 if(casts.length){
-                    const counterHookId = Hooks.on("midi-qol.preambleComplete", async (workflow) => {
+                    const counterHookId = Hooks.on("midi-qol.prePreambleComplete", async (workflow) => {
                         if(workflow.id !== this.data.id) return
                         const spellLvl = workflow.itemLevel ?? 0
                         for (const value of casts){
@@ -2040,7 +2076,7 @@ export class workflow extends framework {
                             workflow.options.createMessage = false
                             workflow.aborted = true
                         }
-                        Hooks.off("dnd5e.preambleComplete", counterHookId);
+                        Hooks.off("dnd5e.prePreambleComplete", counterHookId);
                         return !cancel;
                     });
                 }
@@ -2231,7 +2267,7 @@ export class workflow extends framework {
                 await this.appendMessageMQ(`+${this.sourceData.charismaMod} force damage from Agonizing Blast.`)
             }
         }
-        else if(this.hook === 'midi-qol.preambleComplete'){
+        else if(this.hook === 'midi-qol.prePreambleComplete'){
             if(!this.item.name === 'Eldritch Blast') return
             const maxTargets = this.cantripScale
             await this.recurItemUse(maxTargets)
@@ -2304,10 +2340,20 @@ export class workflow extends framework {
         }).render(true);
     }
 
+    async _featherOfDiatrymaSummoning(){
+        await this.summon();
+        this.logNote(`Feather of Diatryma Summoning was used`)
+    }
+
     async _figurineOfWonderousPowerLions(){
         await this.summon();
         await this.summon();
         this.logNote(`Figurine of Wonderous Power: Lions was used and cannot be used for another 7 days.`)
+    }
+
+    async _figurineOfWonderousPowerObsidianSteed(){
+        await this.summon();
+        this.logNote(`Figurine of Wonderous Power: Obsidian Steed was used and cannot be used for another 5 days.`)
     }
 
     async _fireShield(){
@@ -2339,6 +2385,7 @@ export class workflow extends framework {
                 }
             }
         }
+        this.summonData.noHPRoll = true
         await this.summon();
     }
 
@@ -2396,6 +2443,7 @@ export class workflow extends framework {
                     }
                 }
             }
+            this.summonData.noHPRoll = true
             await this.summon();
             await this.deleteTemplates()
         } else {
@@ -2481,6 +2529,7 @@ export class workflow extends framework {
                 }
             }
         }
+        this.summonData.noHPRoll = true
         await this.summon();
     }
 
@@ -2697,12 +2746,13 @@ export class workflow extends framework {
     }
 
     async _mageHand(){//tested v10
+        this.summonData.noHPRoll = true
         await this.summon();
     }
     
     async _magicMissile(){
         if(!this.item.name === 'Magic Missile') return
-        if(!this.data.options?.notCast && this.hook === 'midi-qol.preambleComplete'){
+        if(!this.data.options?.notCast && this.hook === 'midi-qol.prePreambleComplete'){
             const maxTargets = 3 + this.upcastAmount
             await this.recurItemUse(maxTargets)
         } 
@@ -2728,6 +2778,7 @@ export class workflow extends framework {
                 }
             }
         }
+        this.summonData.noHPRoll = true
         await this.summon();
     }
 
@@ -2801,7 +2852,7 @@ export class workflow extends framework {
      * @returns 
      */
     async _nathairsMischiefHook(){
-        if(!this.sourceData.isConcentrating) return
+        if(!this.hasActor || !this.sourceData.isConcentrating) return
         const source = await fromUuid(this.getEffect(this.source.actor, "Concentrating")?.origin);
         if (source.name === this.config.name){
             this.templateData.id = canvas.scene.templates.find(t => t.flags?.[napolitano.ID]?.['nathairs-mischief']?.userId === game.userId && t.flags?.[napolitano.ID]?.['nathairs-mischief']?.source === this.source.actor.id)?.id
@@ -3151,6 +3202,7 @@ export class workflow extends framework {
 
     async _spikeGrowth(){
         if(this.hook === 'dnd5e.useItem') {
+            this.summonData.noHPRoll = true
             await this.summon();
         } else {
             await this.damage({targets: [this.firstHitTarget], itemData: this.getItem('Spike Growth Effect'), dice: '2d4', type: 'piercing'})
@@ -3300,6 +3352,7 @@ export class workflow extends framework {
                 }
             }
         }
+        this.summonData.noHPRoll = true
         await this.summon();
     }
 
