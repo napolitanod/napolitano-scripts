@@ -29,7 +29,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         const macro = new macros(ruleset, args[args.length-1], options)
         await macro._initialize()
         switch(ruleset){
-            case 'accursedSpecter': await macro._accursedSpecter(); break;
             case 'armorOfAgathys': await macro._armorOfAgathys(); break;
             case 'auraOfVitality': await macro._auraOfVitality(); break;
             case 'bagOfTricksGray': await macro._bagOfTricksGray(); break;
@@ -60,8 +59,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'elementalGem': await macro._elementalGem(); break;
             case 'experimentalElixer': await macro._experimentalElixer(); break;
             case 'falseLife': await macro._falseLife(); break;
-            case 'featherOfDiatrymaSummoning': await macro._featherOfDiatrymaSummoning(); break;
-            case 'figurineOfWonderousPowerObsidianSteed': await macro._figurineOfWonderousPowerObsidianSteed(); break;
             case 'findFamiliar': await macro._findFamiliar(); break;
             case 'fireShield': await macro._fireShield(); break;
             case 'fogCloud': await macro._fogCloud(); break;
@@ -152,27 +149,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         }
         super._initializePost()
         napolitano.log(false, `Macros initialized ${this.ruleset}...`, this);
-    }
-
-    async _accursedSpecter(){ //tested v10
-        this.summonData.updates = {
-            actor: {
-                system:{
-                    attributes: {
-                        hp: {
-                            temp: Math.floor(this.sourceData.warlockLevel/2)
-                        }
-                    },
-                    bonuses: {
-                        msak: {attack: this.sourceData.charismaMod},
-                        mwak: {attack: this.sourceData.charismaMod},
-                        rsak: {attack: this.sourceData.charismaMod},
-                        rwak: {attack: this.sourceData.charismaMod}
-                    }
-                }
-            }
-        }
-        await this.summon();
     }
 
     async _armorOfAgathys(){
@@ -423,13 +399,13 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             }}
         }
         if(choice !== "Flamethrower") {
-            this.summonData.updates.embedded.Item["Flamethrower"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Flamethrower")
         }
         if(choice !== "Protector") {
-            this.summonData.updates.embedded.Item["Protector"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Protector")
         }
         if(choice !== "Force Ballista") {
-            this.summonData.updates.embedded.Item["Force Ballista"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Force Ballista")
         }
         await this.summon();
     }
@@ -722,16 +698,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
     async _falseLife(){
         if(this.feature.dae==='on') this.generateEffect(this.firstHitTarget)
         if(this.feature.dae==='off' && this.sourceData.tempHp) this.effectEndTempHP()
-    }
-
-    async _featherOfDiatrymaSummoning(){
-        await this.summon();
-        this.logNote(`Feather of Diatryma Summoning was used`)
-    }
-
-    async _figurineOfWonderousPowerObsidianSteed(){
-        await this.summon();
-        this.logNote(`Figurine of Wonderous Power: Obsidian Steed was used and cannot be used for another 5 days.`)
     }
 
     async _findFamiliar(){ //tested v10
@@ -1458,15 +1424,13 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         };
 
         if(choice !== "slaad") {
-            this.summonData.updates.embedded.Item["Claws"] = warpgate.CONST.DELETE
-            this.summonData.updates.embedded.Item["Regeneration"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Regeneration").push ("Claws")
         }
        if(choice !== "beholderkin") {
-           this.summonData.updates.embedded.Item["Eye Ray"] = warpgate.CONST.DELETE
+           this.summonData.deletes.item.push("Eye Ray")
        }
        if(choice !== "starSpawn") {
-           this.summonData.updates.embedded.Item["Whispering Aura"] = warpgate.CONST.DELETE
-           this.summonData.updates.embedded.Item["Psychic Slam"] = warpgate.CONST.DELETE
+           this.summonData.deletes.item.push("Whispering Aura").push ("Psychic Slam")
        }
        await this.summon()
        if(choice === 'starSpawn') await this.addTag('NAP-SOT-5', this.summonedToken)
@@ -1512,15 +1476,15 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             }}
         };
         if(choice !== "Fuming") {
-            this.summonData.updates.embedded.Item["Fuming"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Fuming")
         }
         if(choice !== "Tricksy") {
-            this.summonData.updates.embedded.Item["Tricksy"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Tricksy")
         }
         if(choice === "Mirthful") {
             this.summonData.updates.embedded.Item["Mirthful"] = { "system.save.dc": this.sourceData.spelldc}
         } else {
-            this.summonData.updates.embedded.Item["Mirthful"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Mirthful")
         }
         await this.summon()
     }
@@ -1567,13 +1531,13 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         };
 
         if(shadow !== "Fear") {
-            this.summonData.updates.embedded.Item["Shadow Stealth"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Shadow Stealth")
         }
         if(shadow !== "Despair") {
-            this.summonData.updates.embedded.Item["Weight of Sorrow"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Weight of Sorrow")
         }
         if(shadow !== "Fury") {
-            this.summonData.updates.embedded.Item["Terror Frenzy"] = warpgate.CONST.DELETE
+            this.summonData.deletes.item.push("Terror Frenzy")
         }
         await this.summon()
     }

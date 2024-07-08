@@ -14,7 +14,7 @@ export class napolitano {
      * @param  {...any} args - what to log
     */
     static log(force, ...args) {  
-      const shouldLog = force || game.modules.get('_dev-mode')?.api?.getPackageDebugValue(this.ID);
+      const shouldLog = true//force || game.modules.get('_dev-mode')?.api?.getPackageDebugValue(this.ID);
   
       if (shouldLog) {
         console.log(this.ID, '|', ...args);
