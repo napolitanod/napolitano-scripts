@@ -1653,6 +1653,7 @@ export class workflow extends framework {
             case 'torch': flow._torch(); break;
             case 'totemSpiritBear': flow._totemSpiritBear(); break;
             case 'varallasClawsOfDarkness': flow._varallasClawsOfDarkness(); break;
+            case 'voicesFromBeyond': flow._voicesFromBeyond(); break;
             case 'whisperingAura': flow._whisperingAura(); break;
             case 'wildSurgeRetribution': flow._wildSurgeRetribution(); break;
             case 'witchBolt': flow._witchBolt(); break;
@@ -1941,6 +1942,7 @@ export class workflow extends framework {
                 break;
             case 1:
                 if(game.settings.get("napolitano-scripts", "intrusive-echoes")) workflow.play('intrusiveEchoes', this.data, {hook: this.hook})
+                if(game.settings.get("napolitano-scripts", "voices-from-beyond")) workflow.play('voicesFromBeyond', this.data, {hook: this.hook})
                 break;
           case 13:
                 if(game.settings.get("napolitano-scripts", "echoing-mind")) workflow.play('echoingMind', this.data, {hook: this.hook})
@@ -3355,6 +3357,18 @@ export class workflow extends framework {
         this.summonData.noHPRoll = true
         await this.summon();
     }
+
+        /**
+     * Tested: v12
+     * Rolls Voices from Beyond table (on 1)
+     * @returns 
+     */
+    async _voicesFromBeyond(){
+        if(!this.setItem()) return
+        await this.rollTable()
+        await this.updateItemUses(-1)
+        this.message(`Voices from Beyond: ${this.tableRollText}`, {title: 'Voices from Beyond'})
+        }
 
     async _wardingFlare(){
         if(!this.hasTargets || !this.itemData.isAttack) return

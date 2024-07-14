@@ -46,6 +46,13 @@ Hooks.once('init', async function() {
         type: Boolean,
 		requiresReload: true
     });
+    game.settings.register(module, "logging", {
+        name: "Debug",
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
     game.settings.register(module, "marker", {
         name: game.i18n.localize("Turn Marker"),
         hint: game.i18n.localize("Choose turn marker."),

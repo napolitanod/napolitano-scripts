@@ -762,6 +762,14 @@ export const NAPOLITANOCONFIG = {
             }
         }
     },
+    voicesFromBeyond: {
+        name: "Voices from Beyond",
+        table: {
+            compendium: "Napolitano Roll Table",
+            compendiumBackup: "DDB Roll Table",
+            name: "Voices from Beyond"
+        }
+    },
     wardingFlare: {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Energy/Shimmer01_01_Regular_Orange_400x400.webm', duration: 2000, scale: 2}},
         name: "Warding Flare"
@@ -901,6 +909,7 @@ export const CONFIGS = [
     {id:"shield", name:"Shield (spell)"},
     {id:"silvery-barbs", name:"Silvery Barbs"},
     {id:"taste-of-the-stones", name:"Taste of the Stones"},
+    {id:"voices-from-beyond", name:"Voices from Beyond"},
     {id:"warding-flare", name:"Warding Flare"},
     {id:"wild-surge", name:"Wild Surge"},
     {id:"witch-bolt", name:"Witch Bolt"}
