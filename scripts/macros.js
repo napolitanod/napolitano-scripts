@@ -61,7 +61,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'falseLife': await macro._falseLife(); break;
             case 'findFamiliar': await macro._findFamiliar(); break;
             case 'fireShield': await macro._fireShield(); break;
-            case 'fogCloud': await macro._fogCloud(); break;
             case 'formOfDread': await macro._formOfDread(); break;
             case 'gazerEyeRays': await macro._gazerEyeRays(); break;
             case 'genericContest': await macro._genericContest(); break;
@@ -764,16 +763,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
     async _fireShield(){
         const choice = await this.choose(['Warm', 'Chill'], 'Choose shield type.', 'Fire Shield', {owner: this.sourceData.owner, img: this.item.img})
         if(choice) await this.addActiveEffect({effectName: `Fire Shield - ${choice}`, uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
-    }
-
-    async _fogCloud(){
-        this.summonData.updates = {
-            token: { 
-                height: 8 * this.spellLevel,
-                width: 8 * this.spellLevel
-            }
-        }
-        await this.summon();
     }
     
     async _formOfDread(){

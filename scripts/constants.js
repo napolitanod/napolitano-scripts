@@ -845,6 +845,7 @@ export const HOOKEDUSEITEMITEMS = {
     'Feather of Diatryma Summoning': 'featherOfDiatrymaSummoning',
     'Figurine of Wondrous Power (Golden Lions)': 'figurineOfWonderousPowerLions',
     'Figurine of Wondrous Power (Obsidian Steed)': 'figurineOfWonderousPowerObsidianSteed',
+    'Fog Cloud': 'fogCloud',
     'Grease': 'grease',
     'Halo of Spores': 'haloOfSpores',
     "Maximilian's Earthen Grasp": 'maximiliansEarthenGrasp',

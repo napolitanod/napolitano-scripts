@@ -144,7 +144,7 @@ export class framework {
 
     get currentCombatant(){
         if(!this.hasCombat || !this.combat.current?.tokenId) return
-        return this.combat.scene.getEmbeddedDocument("Token", this.combat.current.tokenId)
+        return game.scenes.get(this.combat.combatant.sceneId).getEmbeddedDocument("Token", this.combat.current.tokenId)
     }
 
     get currentCombatantPlaceable(){
@@ -2392,11 +2392,22 @@ export class workflow extends framework {
     }
 
     async _fogCloud(){
-        if(this.hook === 'createToken') {
-            await this.buildBoundaryWall(this.source.token)
-            if(game.modules.get('token-attacher')?.active) await tokenAttacher.attachElementsToToken(this.walls, this.source.token.id)
+        if(this.hook === 'dnd5e.useItem') {
+            this.summonData.updates = {
+                token: { 
+                    height: 8 * this.spellLevel,
+                    width: 8 * this.spellLevel
+                }
+            }
+            await this.summon();
         }
-        await this.heavilyObscure()
+        else {
+            if(this.hook === 'createToken') {
+                await this.buildBoundaryWall(this.source.token)
+                if(game.modules.get('token-attacher')?.active) await tokenAttacher.attachElementsToToken(this.walls, this.source.token.id)
+            }
+            await this.heavilyObscure()
+        }
     }
 
     async _formOfDread(){
