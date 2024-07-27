@@ -204,6 +204,7 @@ const OVERRIDES = {
     ,'Form of Dread: Transform': 'Roll this item to apply the effect to your token. You will be prompted automatically when saving throw opportunity arises during an attack.'
     ,'Green-Flame Blade': 'Roll this item before making a melee weapon attack. On your next melee attack you will then gain the benefits of this spell and you will be prompted for any spreading damage.'
     ,'Halo of Spores': "No roll required. You will be prompted to use this ability when the opportunity arises and if you haven't yet used this reaction since your last turn."
+    ,"Hand Grenade": "Roll this item to place template within 30 feet range."
     ,"Hexblade's Curse": "Target a creature and then roll this item. The curse will be automatically accounted for when you roll attacks and damage."
     ,'Improved Flare': 'For each attack made against a friendly create not you, you will be prompted as to whether or not you wish to use your warding flare. Confirming that you wish to use will apply the disadvantage to the attack roll. Disable or enable the prompt by toggling the active effect for this item.'    ,'Maneuvers: Disarming Attack': 'Roll item to indicate your desire to use disarming attack on your next hit. This will mark your token. On your next damage roll disarming attack will be invoked and at that time your superiority die will be used.'
     ,'Magic Missile': 'Target a creature then roll item. You will then be prompted to select the remainder of the available targets (based on spell level) one at a time.'

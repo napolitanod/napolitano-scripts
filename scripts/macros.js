@@ -37,7 +37,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'bigbysHand': await macro._bigbysHand(); break;
             case 'blight': await macro._blight(); break;
             case 'blindnessDeafness': await macro._blindnessDeafness(); break;
-            case 'boomingBlade': await macro._boomingBlade(); break;
             case 'brazierOfCommandingFireElementals': await macro._brazierOfCommandingFireElementals(); break;
             case 'channelDivinityInvokeDuplicity': await macro._channelDivinityInvokeDuplicity(); break;
             case 'chromaticOrb': await macro._chromaticOrb(); break;
@@ -61,7 +60,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'falseLife': await macro._falseLife(); break;
             case 'findFamiliar': await macro._findFamiliar(); break;
             case 'fireShield': await macro._fireShield(); break;
-            case 'fogCloud': await macro._fogCloud(); break;
             case 'formOfDread': await macro._formOfDread(); break;
             case 'gazerEyeRays': await macro._gazerEyeRays(); break;
             case 'genericContest': await macro._genericContest(); break;
@@ -96,7 +94,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
             case 'shoveToSide': await macro._shove(); break;
             case 'shoveBack': await macro._shove(); break;
             case 'shoveProne': await macro._shove(); break;
-            case 'silveryBarbs': await macro._silveryBarbs(); break;
             case 'spiritualWeapon': await macro._spiritualWeapon(); break;
             case 'stormSphere': await macro._stormSphere(); break;
             case 'summonAberration': await macro._summonAberration(); break;
@@ -268,7 +265,7 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         if(!this.hasHitTargets) return
         this.generateEffect(this.firstTarget, {source: this.source.token})
         const type = this.getActorType(this.firstTarget) 
-        this.roll = await new Roll(`${type==='plant' ? `${((this.spellLevel+4) * 8)}d1` : `${this.spellLevel+4}d8`}`).evaluate({async: true});   
+        this.roll = await new Roll(`${type==='plant' ? `${((this.spellLevel+4) * 8)}d1` : `${this.spellLevel+4}d8`}`).evaluate();   
         const saveRoll = await this.firstTarget.actor.rollAbilitySave("con", {flavor: `${CONFIG.DND5E.abilities["con"].label} DC ${this.sourceData.spelldc} Blight`, fastforward: true, disadvantage: type==='plant' ? true : false })   
         if (["undead", "construct"].includes(type)) return this.message(`${this.firstTarget.name} resists the blight because they are a ${type}`, {title: 'Blight Resisted', whisper: "GM"});
         await this.damage({type: "necrotic", targets: [this.firstTarget], half: saveRoll.total >= this.sourceData.spelldc ? true : false})
@@ -278,19 +275,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         if(this.feature.dae!=='on' || !this.hasTargets) return 
         const choice = await this.choose(['Blind', 'Deafen'], 'Choose to blind or deafen', 'Blindness/Deafness', {owner: this.sourceData.owner, img: this.item.img})
         if(choice) await this.addActiveEffect({effectName: `${choice}ed Spell`, uuid: this.firstTarget.actor.uuid, origin: this.source.actor.uuid})
-    }
-
-    async _boomingBlade(){
-        const weapons = this.source.actor.items.filter(i => i.type === 'weapon' && i.system.actionType === 'mwak')
-        const choice = await this.choose(weapons.map(w => [w.id, w.name]), 'Choose the weapon to make the booming blade attack with.', `${this.name} choose weapon`)
-        const item = weapons.find(w => w.id === choice)
-        let result
-        if(item) result = await this.useItem(item)
-        if(result.hitTargets.size){
-            const target = result.hitTargets.values().next().value
-            if(target && this.cantripScale > 1) await this.damage({targets: [target], dice: `${this.cantripScale - 1}d8`, type: 'thunder'})
-            await this.addActiveEffect({effectName: 'Booming Blade', uuid: target.actor.uuid, origin: this.source.actor.uuid})
-        }
     }
 
     async _brazierOfCommandingFireElementals(){
@@ -764,16 +748,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
     async _fireShield(){
         const choice = await this.choose(['Warm', 'Chill'], 'Choose shield type.', 'Fire Shield', {owner: this.sourceData.owner, img: this.item.img})
         if(choice) await this.addActiveEffect({effectName: `Fire Shield - ${choice}`, uuid: this.source.actor.uuid, origin: this.source.actor.uuid})
-    }
-
-    async _fogCloud(){
-        this.summonData.updates = {
-            token: { 
-                height: 8 * this.spellLevel,
-                width: 8 * this.spellLevel
-            }
-        }
-        await this.summon();
     }
     
     async _formOfDread(){
@@ -1315,12 +1289,6 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
         }
     }
 
-    async _silveryBarbs(){
-        const response = await this.promptTarget({title: 'Silvery Barbs Advantage', origin: this.source.actor.uuid, owner: this.sourceData.owner, event: 'Grant Silvery Barbs Advantage', prompt: `Select a target to grant advantage to on their next attack roll, saving throw or ability check.`})
-        const target = this.scene.tokens.find(t => t.id === response.targets[0])
-        if(target) this.addActiveEffect({effectName: 'Silvery Barbs Advantage', origin: response.origin, uuid: target.actor.uuid})
-    }
-
     async _spiritualWeapon(){//tested v10
         const weapon = await this.choose([['sword', 'Sword'], ['mace', 'Mace'], ['scythe', 'Scythe'], ['maul', 'Maul']] , 'Choose the form the spectral weapon takes:', 'Weapon Type')
         const color = await this.choose([['blue', 'Blue'], ['green', 'Green'], ['orange', 'Orange'], ['purple', 'Purple'], ['red', 'Red']], 'Choose the color of the weapon', 'Weapon Color')
@@ -1600,7 +1568,7 @@ game.napolitano.macros(args, 'createBonfire', _napOps)
 
     async _tollTheDead(){
         if (!this.failedSaves.size) return
-        this.roll = await new Roll(`${this.cantripScale}d${this.hasMaxHP(this.firstFailedSave) ? 8 : 12}[${"necrotic"}]`).evaluate({async: true});
+        this.roll = await new Roll(`${this.cantripScale}d${this.hasMaxHP(this.firstFailedSave) ? 8 : 12}[${"necrotic"}]`).evaluate();
         await this.damage({type: "necrotic", critical: this.isCritical})
     }
     

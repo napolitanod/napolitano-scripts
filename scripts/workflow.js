@@ -16,7 +16,8 @@ export class framework {
         },
         this.damageData = {
             roll: {},
-            original: {}
+            original: {},
+            workflow: {}
         },
         this.data = data ?? {},
         this.failedSaves = new Set,
@@ -144,12 +145,16 @@ export class framework {
 
     get currentCombatant(){
         if(!this.hasCombat || !this.combat.current?.tokenId) return
-        return this.combat.scene.getEmbeddedDocument("Token", this.combat.current.tokenId)
+        return game.scenes.get(this.combat.combatant.sceneId).getEmbeddedDocument("Token", this.combat.current.tokenId)
     }
 
     get currentCombatantPlaceable(){
         if(!this.hasCombat) return
         return canvas.tokens.get(this.combat.current.tokenId) ?? {}
+    }
+
+    get damageRollCount(){
+        return this.data.damageRollCount ?? 0
     }
 
     get damageTotal(){
@@ -158,6 +163,10 @@ export class framework {
 
     get failedSavesArray(){
         return Array.from(this.failedSaves)
+    }
+
+    get firstDamageRoll(){
+        return this.data.damageRolls[0] 
     }
 
     get gridDistance(){
@@ -224,9 +233,11 @@ export class framework {
             dc: this.item.system.save.dc,
             isAttack: ["mwak","rwak","msak","rsak"].includes(this.item.system.actionType) ? true : false,
             isDamage: game.dnd5e.config.damageTypes[this.item.system.damage?.parts?.[0]?.[1]] ? true : false,
+            isFinesse: this.item.system.properties.has("fin"),
             isMeleeAttack: ["mwak","msak"].includes(this.item.system.actionType) ? true : false,
             isMeleeWeaponAttack: this.item.system.actionType ==="mwak" ? true : false,
             isRangedAttack: ["rwak","rsak"].includes(this.item.system.actionType) ? true : false,
+            isRangedWeaponAttack: ["rwak"].includes(this.item.system.actionType) ? true : false,
             isSpell: this.item.type === 'spell' ? true : false,
             isSpellAttack: ["msak","rsak"].includes(this.item.system.actionType) ? true : false,
             isWeaponAttack: ["mwak","rwak"].includes(this.item.system.actionType) ? true : false,
@@ -284,6 +295,7 @@ export class framework {
             owner: getActorOwner(this.source.actor),
             prof: this.source.actor.system.attributes.prof ?? 0,
             race: this.source.actor.system.details.race,
+            rogueLevel: this.source.actor.classes.rogue?.system?.levels ?? 0,
             size: this.getSize(this.source.actor),
             spellAbility: this.source.actor.system.attributes.spellcasting,
             spellAttack: this.source.actor.system.attributes.spelldc - 8,
@@ -541,18 +553,17 @@ export class framework {
         half = false,
         show = true
     }={}){
-        this.damageData.original = dice ? await new Roll(dice).evaluate({async: true}) : roll
-        if(critical) this.damageData.original = MidiQOL.doCritModify(this.damageData.original)
+        this.damageData.original = dice ? await new Roll(dice).evaluate() : roll
         if(show) await this.showRoll(this.damageData.original)
         this.damageData.roll = half ? await this.halfRoll(this.damageData.original) : this.damageData.original
-        await new MidiQOL.DamageOnlyWorkflow(
+        this.damageData.workflow = await new MidiQOL.DamageOnlyWorkflow(
             actor, 
             token, 
             this.damageData.roll.total, 
             type, 
             targets,
             this.damageData.roll, 
-            {flavor: flavor ? flavor : `${this.config.name ?? 'Damage'} from ${actor.name} adds ${this.damageData.roll.result} ${type} damage${half ? ' (half ' + this.damageData.original.result + ' damage due to save)' : ''}.`, itemData: itemData, itemCardId: itemCardId }
+            {flavor: flavor ? flavor : `${this.config.name ?? 'Damage'} from ${actor.name} adds ${this.damageData.roll.result} ${type} damage${half ? ' (half ' + this.damageData.original.result + ' damage due to save)' : ''}.`, itemData: itemData, itemCardId: itemCardId, isCritical: this.isCritical }
         );
     }
 
@@ -808,7 +819,7 @@ export class framework {
     }
 
     async halfRoll(roll = this.roll){
-        roll = await new Roll(`${Math.floor(roll.total/2)}`).evaluate({async: true})
+        roll = await new Roll(`${Math.floor(roll.total/2)}`).evaluate()
         return roll
     }
 
@@ -840,7 +851,7 @@ export class framework {
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
         const last = this.getFlag(actor, flag)?.[`${id}`] 
-        return (last.time > this.now || (last.time === this.now && last.turn >= this.combat.current.turn)) ? true : false
+        return (last && (last.time > this.now || (last.time === this.now && last.turn >= this.combat.current.turn))) ? true : false
     }
 
     async heavilyObscure({target = this.firstTarget, origin = this.source.actor.uuid, source = this.source.token}={}){ 
@@ -936,7 +947,7 @@ export class framework {
     }
 
     async randomDirection(){
-        const directionRoll = await new Roll(`1d8`).evaluate({async: true})
+        const directionRoll = await new Roll(`1d8`).evaluate()
         switch(directionRoll.result){
             case '1': return 'north';
             case '2': return 'northeast';
@@ -1018,7 +1029,7 @@ export class framework {
         const actor = document.actor ?? document
         if(!this.isActor(actor)) return
         const dice = `1${actor.system.scale.bard.inspiration?.formula}`
-        const result = await new Roll(dice).evaluate({async: true})
+        const result = await new Roll(dice).evaluate()
         if(show) this.showRoll(result)
         return result
     }
@@ -1035,7 +1046,7 @@ export class framework {
     }
 
     async rollDice(dice, {show=true, toWorkflow=true}={}){
-        const roll = await new Roll(dice).evaluate({async: true})
+        const roll = await new Roll(dice).evaluate()
         if(toWorkflow) this.roll = roll
         if(show) this.showRoll(roll)
         return roll
@@ -1073,7 +1084,7 @@ export class framework {
     }
 
     async rollSuperiorityDie({show=true}={}){
-        const result = await new Roll(this.sourceData.superiorityDie).evaluate({async: true})
+        const result = await new Roll(this.sourceData.superiorityDie).evaluate()
         if(show) this.showRoll(result)
         return result
     }
@@ -1567,6 +1578,7 @@ export class workflow extends framework {
             case 'scorchingRay': await flow._scorchingRay(); break;
             case 'shield': await flow._shield(); break;
             case 'silveryBarbs': await flow._silveryBarbs(); break;
+            case 'sneakAttack': await flow._sneakAttack(); break;
             case 'wardingFlare': await flow._wardingFlare(); break;
         }
     }
@@ -1615,6 +1627,7 @@ export class workflow extends framework {
             case 'grease': flow._grease(); break;
             case 'greenFlameBlade': flow._greenFlameBlade(); break;
             case 'haloOfSpores': flow._haloOfSpores(); break;
+            case 'handGrenade': flow._handGrenade(); break;
             case 'healingSpirit': flow._healingSpirit(); break;
             case 'heatedBody': flow._heatedBody(); break;
             case 'hex': flow._hex(); break;
@@ -1653,6 +1666,7 @@ export class workflow extends framework {
             case 'torch': flow._torch(); break;
             case 'totemSpiritBear': flow._totemSpiritBear(); break;
             case 'varallasClawsOfDarkness': flow._varallasClawsOfDarkness(); break;
+            case 'voicesFromBeyond': flow._voicesFromBeyond(); break;
             case 'whisperingAura': flow._whisperingAura(); break;
             case 'wildSurgeRetribution': flow._wildSurgeRetribution(); break;
             case 'witchBolt': flow._witchBolt(); break;
@@ -1735,7 +1749,7 @@ export class workflow extends framework {
                     return
                 }
                 const roll = await this.rollDice('1d8')
-                await this.appendRoll(this.data.damageRoll, roll, {sign: 1, isDamage: true})
+                await this.appendRoll(this.firstDamageRoll, roll, {sign: 1, isDamage: true})
                 this.appendMessageMQ(`+${roll.total} ${this.itemData.damageType} damage due to Arcane Firearm.`)
             }
         } else {
@@ -1779,7 +1793,7 @@ export class workflow extends framework {
           }
         });
         if(damage) {
-            this.roll = await new Roll(`${damage}d1`).evaluate({async: true})
+            this.roll = await new Roll(`${damage}d1`).evaluate()
             await this.damage({type: "cold", targets: [this.source.token], itemData: this.getItem(), itemCardId: "new"})
             this.message(`The Armor of Agathys from the targets that were attacked deals ${damage} cold damage to ${this.source.actor.name}.`, {title: 'Armor of Agathys'}) //no itemcard so flavor is messaged in chat
         }
@@ -1891,7 +1905,19 @@ export class workflow extends framework {
     }
 
     async _boomingBlade(){
-        if(this.hasEffect(this.source.actor, 'Booming Blade')){
+        if(this.hook === 'dnd5e.useItem'){ 
+            const weapons = this.source.actor.items.filter(i => i.type === 'weapon' && i.system.actionType === 'mwak')
+            const choice = await this.choose(weapons.map(w => [w.id, w.name]), 'Choose the weapon to make the booming blade attack with.', `${this.name} choose weapon`)
+            const item = weapons.find(w => w.id === choice)
+            let result
+            if(item) result = await this.useItem(item)
+            if(result.hitTargets.size){
+                const target = result.hitTargets.values().next().value
+                if(target && this.cantripScale > 1) await this.damage({targets: [target], dice: `${this.cantripScale - 1}d8`, type: 'thunder'})
+                await this.addActiveEffect({effectName: 'Booming Blade', uuid: target.actor.uuid, origin: this.source.actor.uuid})
+            }
+        }
+        else if(this.hasEffect(this.source.actor, 'Booming Blade')){
             let eff = this.getEffect(this.source.actor, "Booming Blade")
             const source = fromUuidSync(eff.origin)
             if(source){
@@ -1941,6 +1967,7 @@ export class workflow extends framework {
                 break;
             case 1:
                 if(game.settings.get("napolitano-scripts", "intrusive-echoes")) workflow.play('intrusiveEchoes', this.data, {hook: this.hook})
+                if(game.settings.get("napolitano-scripts", "voices-from-beyond")) workflow.play('voicesFromBeyond', this.data, {hook: this.hook})
                 break;
           case 13:
                 if(game.settings.get("napolitano-scripts", "echoing-mind")) workflow.play('echoingMind', this.data, {hook: this.hook})
@@ -2094,8 +2121,8 @@ export class workflow extends framework {
                 break;
             case 'midi-qol.preDamageRollComplete':
                 type = 'damage'
-                originalRollTotal = this.data.damageRoll?.terms[0]?.total ?? 0
-                rollSource = this.data.damageRoll
+                originalRollTotal = this.firstDamageRoll?.terms[0]?.total ?? 0
+                rollSource = this.firstDamageRoll
                 break;
             default:
                 type = 'ability'
@@ -2192,14 +2219,14 @@ export class workflow extends framework {
                 confirmed: {
                     label: "Yes",
                     callback: async () => {
-                        this.roll = await new Roll(`${numDice * 2}d8`).evaluate({async: true});
+                        this.roll = await new Roll(`${numDice * 2}d8`).evaluate();
                         this.damage({type: 'radiant', targets: [this.firstTarget]})
                     }
                 },
                 cancel: {
                     label: "No",
                     callback: async () => {
-                        this.roll = await new Roll(`${numDice}d8`).evaluate({async: true});
+                        this.roll = await new Roll(`${numDice}d8`).evaluate();
                         this.damage({type: 'radiant', targets: [this.firstTarget]})
                     }
                 }
@@ -2263,7 +2290,7 @@ export class workflow extends framework {
         if(this.hook === 'midi-qol.preDamageRollComplete'){
             if(!this.hasHitTargets) return
             if(this.hasItem({itemName: 'Eldritch Invocations: Agonizing Blast'})){
-                await this.appendRoll(this.data.damageRoll, false, {sign: 1, isDamage: true, mod: this.sourceData.charismaMod})
+                await this.appendRoll(this.firstDamageRoll, false, {sign: 1, isDamage: true, mod: this.sourceData.charismaMod})
                 await this.appendMessageMQ(`+${this.sourceData.charismaMod} force damage from Agonizing Blast.`)
             }
         }
@@ -2390,11 +2417,22 @@ export class workflow extends framework {
     }
 
     async _fogCloud(){
-        if(this.hook === 'createToken') {
-            await this.buildBoundaryWall(this.source.token)
-            if(game.modules.get('token-attacher')?.active) await tokenAttacher.attachElementsToToken(this.walls, this.source.token.id)
+        if(this.hook === 'dnd5e.useItem') {
+            this.summonData.updates = {
+                token: { 
+                    height: 8 * this.spellLevel,
+                    width: 8 * this.spellLevel
+                }
+            }
+            await this.summon();
         }
-        await this.heavilyObscure()
+        else {
+            if(this.hook === 'createToken') {
+                await this.buildBoundaryWall(this.source.token)
+                if(game.modules.get('token-attacher')?.active) await tokenAttacher.attachElementsToToken(this.walls, this.source.token.id)
+            }
+            await this.heavilyObscure()
+        }
     }
 
     async _formOfDread(){
@@ -2517,6 +2555,11 @@ export class workflow extends framework {
         }
     }
 
+    async _handGrenade(){
+        await dangerZone.triggerZone ("Hand Grenade", this.scene.id, {sources: [this.source.token], location: {x: this.template?._object?.bounds?.x ?? this.template.x, y: this.template?._object?.bounds?.y ?? this.template.y, z: this.template.elevation}})
+        await this.deleteTemplates();
+    }
+
     
     async _healingSpirit(){//tested v10
         this.summonData.updates = {
@@ -2568,7 +2611,7 @@ export class workflow extends framework {
             }
         });
         if(hitTargets.length){
-            this.roll = await new Roll(`1d6`).evaluate({async: true})
+            this.roll = await new Roll(`1d6`).evaluate()
             await this.damage({flavor: `The lasting hex from ${this.source.actor.name} adds ${this.roll.result} necrotic damage.`, type: "necrotic", targets: hitTargets, itemData: this.getItem(), itemCardId: "new"})
         }
     }
@@ -2592,9 +2635,9 @@ export class workflow extends framework {
                 }
             });
             if(hitTargets.length){
-                this.roll = await new Roll(`${this.sourceData.prof}d1`).evaluate({async: true})
+                this.roll = await new Roll(`${this.sourceData.prof}d1`).evaluate()
                 await this.damage({flavor: `The hexblade curse from ${this.source.actor.name} adds ${this.roll.result} damage.`, type: "none", targets: hitTargets, itemData: this.getItem(), itemCardId: "new"})
-                const roll = await new Roll(`${this.sourceData.charismaMod + this.sourceData.warlockLevel}d1`).evaluate({async: true})
+                const roll = await new Roll(`${this.sourceData.charismaMod + this.sourceData.warlockLevel}d1`).evaluate()
                 if(hitTargets.find(t => this.getHP(t) <= 0)) await this.damage({roll: roll, flavor: `The hexblade curse heals ${this.source.actor.name} ${roll.result} due to the death of their target.`, type: "healing", targets: [this.source.token], itemData: this.getItem(), itemCardId: "new"})
             }
         }
@@ -2635,7 +2678,7 @@ export class workflow extends framework {
     }
 
     async _interception(){
-        const originalRollTotal = this.data.damageRoll?.total  ?? 0
+        const originalRollTotal = this.data.damageTotal  ?? 0
         if(!this.itemData.isAttack || !originalRollTotal) return 
         const results = []
         for(const pl of canvas.tokens.placeables) {
@@ -2665,7 +2708,7 @@ export class workflow extends framework {
                     if(value.yes){
                         const roll = await this.rollDice(`1d10`)
                         const mod = value.document.actor.system.attributes.prof
-                        await this.appendRoll(this.data.damageRoll, roll, {sign: -1, isDamage: true, mod: mod})
+                        await this.appendRoll(this.firstDamageRoll, roll, {sign: -1, isDamage: true, mod: mod})
                         this.message(`${value.document.name} uses Interception, reducing the damage dealt of ${originalRollTotal} by ${roll.total + mod}.`, {title: "Interception"})
                         this.appendMessageMQ(`-${roll.total + mod} to damage due to Interception.`)
                         this.addActiveEffect({effectName: 'Reaction', uuid: value.document.actor.uuid, origin: value.document.actor.uuid})
@@ -2783,7 +2826,7 @@ export class workflow extends framework {
     }
 
     async _melfsAcidArrow(){
-         if(!this.DamageOnlyWorkflow && this.hasTargets && !this.hasHitTargets) await this.damage({type: 'acid', half: true, roll: this.data.damageRoll, targets: [this.firstTarget], flavor: `${this.firstTarget.name} sustains acid damage from a missed acid arrow attack.`})
+         if(!this.DamageOnlyWorkflow && this.hasTargets && !this.hasHitTargets) await this.damage({type: 'acid', half: true, roll: this.firstDamageRoll, targets: [this.firstTarget], flavor: `${this.firstTarget.name} sustains acid damage from a missed acid arrow attack.`})
     }
 
     async _message(){
@@ -2902,7 +2945,7 @@ export class workflow extends framework {
     }
 
     async _parry(){
-        const originalRollTotal = this.data.damageRoll?.total  ?? 0
+        const originalRollTotal = this.data.damageTotal ?? 0
         if(!this.itemData.isWeaponAttack || !originalRollTotal) return 
         const results = []
         const avail = this.hitTargetsArray.filter(t => 
@@ -2921,7 +2964,7 @@ export class workflow extends framework {
                 if(value.yes){
                     const roll = await this.rollSuperiorityDie({document: value.document})
                     const mod = value.document.actor.system.abilities.dex.mod
-                    await this.appendRoll(this.data.damageRoll, roll, {sign: -1, isDamage: true, mod: mod})
+                    await this.appendRoll(this.firstDamageRoll, roll, {sign: -1, isDamage: true, mod: mod})
                     const supItem = this.getItem('Superiority Dice', value.document);
                     this.message(`${value.document.name} uses Parry, reducing the damage dealt of ${originalRollTotal} by ${roll.total + mod}.`, {title: "Parry"})
                     this.appendMessageMQ(`-${roll.total + mod} to damage due to Parry.`)
@@ -2959,7 +3002,7 @@ export class workflow extends framework {
 
     async _potentSpellcasting(){
         if(!this.hasItem() || !this.hasHitTargets || !this.damageTotal || !this.source.actor.id || !this.item.id || !(this.itemData.isSpell && this.itemData.baseSpellLevel === 0)) return
-        await this.appendRoll(this.data.damageRoll, false, {sign: 1, isDamage: true, mod: this.sourceData.wisdomMod})
+        await this.appendRoll(this.firstDamageRoll, false, {sign: 1, isDamage: true, mod: this.sourceData.wisdomMod})
         await this.appendMessageMQ(`+${this.sourceData.wisdomMod} additional damage from Potent Spellcasting.`)
         this.generateEffect(this.firstTarget)
     }
@@ -3018,9 +3061,27 @@ export class workflow extends framework {
         }
     }
 
+    async _sneakAttack(){
+        if(this.damageRollCount && this.hasHitTargets && this.hasItem("Sneak Attack")  && (this.itemData.isRangedWeaponAttack || (this.itemData.isMeleeWeaponAttack && this.itemData.isFinesse) ) && this.sourceData.rogueLevel ){
+            if(this.hasOccurredOnce()) return console.log('Sneak attack already used during this time', this)
+            let valid = this.data.advantage;
+            if(!valid) {
+                this.tokensInProximity(this.firstTarget) 
+                if(!this.proximityTokens.find(t => t.id !== this.source.token.id && t.id !== this.firstTarget.id && !t.actor?.effects?.find(e => !e.disabled && INCAPACITATEDCONDITIONS.includes(e.name)) && t.disposition === this.tokenData.disposition)) return
+            }
+            this.setItem()
+            const useForm = await this.yesNo();
+            if (useForm) { 
+                await this.damage({targets: [this.firstHitTarget], dice: this.source.actor.system.scale.rogue['sneak-attack'].formula, type: '', critical: this.isCritical, show: false})
+                this.message(`${this.firstHitTarget.name} sustains ${this.damageData.roll.result} damage from a sneak attack on a ${this.damageData.roll.formula} roll!`, {title: 'Sneak Attack'})
+                await this.setOccurredOnce() 
+            }
+        }
+    }
+
     async _rayOfEnfeeblement(){
-        if (this.data.damageRoll?.formula && this.hasEffect() && this.itemData.isWeaponAttack && this.itemModifier() === 'str'){
-            await this.wrapRoll(this.data.damageRoll, {mod: 2, div: true})
+        if (this.damageRollCount && this.hasEffect() && this.itemData.isWeaponAttack && this.itemModifier() === 'str'){
+            await this.wrapRoll(this.firstDamageRoll, {mod: 2, div: true})
             this.appendMessageMQ(`Damage halved due to Ray of Enfeeblement.`)
         }
     }
@@ -3110,6 +3171,11 @@ export class workflow extends framework {
     async _silveryBarbs(){
         let type, originalRollTotal, rollSource, success = true
         switch(this.hook){
+            case 'dnd5e.useItem':
+                const response = await this.promptTarget({title: 'Silvery Barbs Advantage', origin: this.source.actor.uuid, owner: this.sourceData.owner, event: 'Grant Silvery Barbs Advantage', prompt: `Select a target to grant advantage to on their next attack roll, saving throw or ability check.`})
+                const target = this.scene.tokens.find(t => t.id === response.targets[0])
+                if(target) this.addActiveEffect({effectName: 'Silvery Barbs Advantage', origin: response.origin, uuid: target.actor.uuid})
+                return
             case 'midi-qol.AttackRollComplete':
                 type = 'attack'
                 rollSource = this.data.attackRoll
@@ -3356,6 +3422,18 @@ export class workflow extends framework {
         await this.summon();
     }
 
+        /**
+     * Tested: v12
+     * Rolls Voices from Beyond table (on 1)
+     * @returns 
+     */
+    async _voicesFromBeyond(){
+        if(!this.setItem()) return
+        await this.rollTable()
+        await this.updateItemUses(-1)
+        this.message(`Voices from Beyond: ${this.tableRollText}`, {title: 'Voices from Beyond'})
+        }
+
     async _wardingFlare(){
         if(!this.hasTargets || !this.itemData.isAttack) return
         const results = []
@@ -3418,7 +3496,7 @@ export class workflow extends framework {
           }
         });
         if(hit) {
-            this.roll = await new Roll(`1d6`).evaluate({async: true})
+            this.roll = await new Roll(`1d6`).evaluate()
             await this.damage({type: "force", targets: [this.source.token], itemData: this.getItem(), itemCardId: "new"})
             this.message(`The Wild Magic Surge from the targets that were attacked deals ${this.roll.total} force damage to ${this.source.actor.name}.`, {title: 'Wild Magic Surge'})
         }
@@ -3433,7 +3511,7 @@ export class workflow extends framework {
             const doIt = await this.yesNo({title: 'Witch Bolt', prompt: `${this.name}, Continue concentrating?`, owner: this.sourceData.owner})
             if(doIt){
                 this.generateEffect(this.firstHitTarget)
-                this.roll = await new Roll(`${this.spellLevel}d12`).evaluate({async: true})
+                this.roll = await new Roll(`${this.spellLevel}d12`).evaluate()
                 await this.damage({type: 'lightning'})
             } else{
                 await this.removeConcentration()
