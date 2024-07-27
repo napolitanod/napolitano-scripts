@@ -243,7 +243,7 @@ Hooks.once("midi-qol.midiReady", () => {
     });
 
     HOOKIDS['midi-qol.DamageRollComplete'] = Hooks.on("midi-qol.DamageRollComplete", async (data) => {
-        const hook = "midi-qol.DamageRollComplete";
+        const hook = "midi-qol.DamageRollComplete", results = [];;
         if(data.item?.name !== "Armor of Agathys" && game.settings.get("napolitano-scripts", "armor-of-agathys")){
             workflow.play('armorOfAgathys', data, {hook: hook})
         }
@@ -271,10 +271,12 @@ Hooks.once("midi-qol.midiReady", () => {
         if(game.settings.get("napolitano-scripts", "disarming-attack")){
             workflow.play('disarmingAttack', data, {hook: hook}); 
         }
+        if(game.settings.get("napolitano-scripts", "sneak-attack")) results.push(workflow.playAsync('sneakAttack', data, {hook: hook}))   
         switch(data.item?.name){
             case 'Hungry Jaws': if(game.settings.get("napolitano-scripts", "hungry-jaws")) workflow.play('hungryJaws', data, {hook: hook}); break;
-            case 'Magic Missile': if(data.options?.notCast) await workflow.playAsync('magicMissile', data, {hook: hook}); break;
+            case 'Magic Missile': if(data.options?.notCast) results.push(workflow.playAsync('magicMissile', data, {hook: hook})); break;
         }
+        await Promise.all(results)
      });
      
      HOOKIDS['midi-qol.preApplyDynamicEffects'] = Hooks.on('midi-qol.preApplyDynamicEffects', async function(data){

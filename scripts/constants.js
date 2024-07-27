@@ -668,6 +668,11 @@ export const NAPOLITANOCONFIG = {
         effects:{pre: {file: 'modules/jb2a_patreon/Library/1st_Level/Sleep/Cloud01_02_Regular_Pink_400x400.webm', scale: 1}},
         name: "Sleep"
     },
+    sneakAttack: {
+        effects: {pre: {file: 'modules/jb2a_patreon/Library/1st_Level/Sneak_Attack/Sneak_Attack_Regular_Blue_300x300.webm', scale: 1, wait: 100}},
+        name: "Sneak Attack",
+        prompt: "Use Sneak Attack?"
+    },
     spikeGrowth: {
         name: "Spike Growth",
         killIn: {minutes: 10}
@@ -841,6 +846,7 @@ const LINKDATACATEGORIES = {
 
 export const HOOKEDUSEITEMITEMS = {
     'Accursed Specter': 'accursedSpecter',
+    'Booming Blade': 'boomingBlade',
     'Divine Smite': 'divineSmite',
     'Feather of Diatryma Summoning': 'featherOfDiatrymaSummoning',
     'Figurine of Wondrous Power (Golden Lions)': 'figurineOfWonderousPowerLions',
@@ -848,8 +854,10 @@ export const HOOKEDUSEITEMITEMS = {
     'Fog Cloud': 'fogCloud',
     'Grease': 'grease',
     'Halo of Spores': 'haloOfSpores',
+    'Hand Grenade': 'handGrenade',
     "Maximilian's Earthen Grasp": 'maximiliansEarthenGrasp',
     'Polymorph': 'polymorph',
+    'Silvery Barbs': 'silveryBarbs',
     'Spare the Dying': 'spareTheDying',
     'Spike Growth': 'spikeGrowth',
     'Symbiotic Entity': 'symbioticEntity',
@@ -909,6 +917,7 @@ export const CONFIGS = [
     {id:"relentless-endurance", name:"Relentless Endurence"},
     {id:"shield", name:"Shield (spell)"},
     {id:"silvery-barbs", name:"Silvery Barbs"},
+    {id:"sneak-attack", name:"Sneak Attack"},
     {id:"taste-of-the-stones", name:"Taste of the Stones"},
     {id:"voices-from-beyond", name:"Voices from Beyond"},
     {id:"warding-flare", name:"Warding Flare"},
