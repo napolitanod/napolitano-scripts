@@ -1,6 +1,6 @@
 import {napolitano} from "./napolitano-scripts.js";
 import {importActorIfNotExists, chat, choose, getActorOwner, promptTarget, getSpellData, isOwner, requestSkillCheck, useItem, wait, yesNo} from "./helpers.js";
-import {getMonsterType, CONFIGS, EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, SPELLSLOTS, TEMPLATEMODIFICATION} from "./constants.js";
+import {getMonsterType, CONFIGS, EVIL, INCAPACITATEDCONDITIONS, MULTIPLEDAMAGEROLLSPELLS, NAPOLITANOCONFIG, PCS, SPELLSLOTS, TEMPLATEMODIFICATION, TOOLS} from "./constants.js";
 import {napolitanoScriptsSocket} from "./index.js";
 import {macros} from "./macros.js";
 import {contest} from './contest.js';
@@ -76,11 +76,13 @@ export class framework {
     //getters
     get artificerInfusionOptions(){    
         const obj = {'0': 'None'}
-        if([PCS.chenju, PCS.wubbub].indexOf(this.source.actor.name) !== -1) {obj['def'] = 'Enhanced Defense'};
-        if([PCS.chenju].indexOf(this.source.actor.name) !== -1) {obj['arcana'] = 'Enhanced Arcane Focus'};
+        if([PCS.nesbit].indexOf(this.source.actor.name) !== -1) {obj['armor'] = 'Armor of Magical Strength'};
+        if([PCS.chenju, PCS.nesbit, PCS.wubbub].indexOf(this.source.actor.name) !== -1) {obj['def'] = 'Enhanced Defense'};
+        if([PCS.nesbit, PCS.chenju].indexOf(this.source.actor.name) !== -1) {obj['arcana'] = 'Enhanced Arcane Focus'};
         if([PCS.wubbub].indexOf(this.source.actor.name) !== -1) {obj['homunculus'] = 'Homunculus Servant'};
         if([PCS.wubbub].indexOf(this.source.actor.name) !== -1) {obj['repeatingShot'] = 'Repeating Shot'};
         if([PCS.chenju].indexOf(this.source.actor.name) !== -1) {obj['repMag'] = 'Replicate Magic Item'};
+        if([PCS.nesbit].indexOf(this.source.actor.name) !== -1) {obj['weapon'] = 'Enhanced Weapon'};
         return obj
     }
 
@@ -275,7 +277,7 @@ export class framework {
         return {
             abilities: this.source.actor.system.abilities, 
             arcaneFirearm: this.source.actor.items.filter(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.arcaneFirearm?.selected),
-            artificerTools: this.source.actor.items.filter(i => i.flags?.['napolitano-scripts']?.rightToolForTheJob),
+            artificerTools: this.source.actor.items.filter(i => this.getFlag(i, 'rightToolForTheJob')),
             artificerLevel: this.source.actor.classes.artificer?.system?.levels ?? 0,
             charismaMod: this.getMod('cha'),
             constitutionMod: this.getMod('con'),
@@ -455,8 +457,8 @@ export class framework {
 
     async _appendMessageMQ(message){
         const chatMessage = game.messages.get(this.data.itemCardId);
-        if(!chatMessage.data.content) return
-        let content = duplicate(chatMessage.data.content)
+        if(!chatMessage.content) return
+        let content = foundry.utils.duplicate(chatMessage.content)
         const searchString =  '<div class="midi-qol-hits-display">';
         const replaceString = `<div class="flexrow 1 napolitano-chat-message-body-black-mq">${message}</div><div class="midi-qol-hits-display">`
         content = content.replace(searchString, replaceString);
@@ -591,6 +593,7 @@ export class framework {
     }
 
     async deleteItem({item = this.item, message} = {}){
+        napolitano.log(false, 'Deleting Item', item)
         await napolitanoScriptsSocket.executeAsGM("deleteItem", item.uuid, message);
     }
 
@@ -704,7 +707,8 @@ export class framework {
     }  
 
     getEffect(document = this.source.actor, effect = this.config.name, activeOnly = true){
-        return document.effects?.find(e => (!activeOnly || (!e.isSuppressed && !e.disabled)) && e.name === effect) 
+        const actor = document.actor ?? document
+        return actor.effects?.find(e => (!activeOnly || (!e.isSuppressed && !e.disabled)) && e.name === effect) 
     }  
 
     getFlag(document, flag = {}) {
@@ -989,11 +993,11 @@ export class framework {
         game.user.updateTokenTargets(targetSets.pop())
         const counterHookId = Hooks.on("midi-qol.RollComplete", async (workflow) => {
             if(workflow.id !== this.data.id) return
-            for(const target of targetSets){
+            Hooks.off("midi-qol.RollComplete", counterHookId);
+           for(const target of targetSets){
                 game.user.updateTokenTargets(target)
                 await this.useItem(item, '', {configureDialog: false, notCast: true}, {consumeSpellSlot: false, consumeSpellLevel: false})
             }
-            Hooks.off("midi-qol.RollComplete", counterHookId);
         });
     }
 
@@ -1045,8 +1049,8 @@ export class framework {
         return {success: success, roll: checkRoll, document: document, actor: actor}
     }
 
-    async rollDice(dice, {show=true, toWorkflow=true}={}){
-        const roll = await new Roll(dice).evaluate()
+    async rollDice(dice, {show=true, toWorkflow=true, damage = false}={}){
+        const roll = await damage ? new CONFIG.Dice.DamageRoll(dice).evaluate() : new Roll(dice).evaluate()
         if(toWorkflow) this.roll = roll
         if(show) this.showRoll(roll)
         return roll
@@ -1162,6 +1166,7 @@ export class framework {
     }
 
     async summon(options={}){
+        this.summonData.options = options;
         let actor = options.name ?? this.config.name;
         if(options.table) {
             await this.rollTable()
@@ -1171,16 +1176,19 @@ export class framework {
 
         this.summonData.summonedTokens = this.templateData.id ? await new Portal().addCreature(actor, this.summonUpdates).setLocation({x: this.templateData.location.x + (this.gridSize * game.actors.getName(actor).prototypeToken.width/2), y: this.templateData.location.y + (this.gridSize * game.actors.getName(actor).prototypeToken.height/2)}).spawn() : await new Portal().texture(this.summonTexture(actor)).addCreature(actor, this.summonUpdates).spawn();
         this.generateEffect(this.summonData.summonedTokens[0])
-        if(this.summonData.deletes.item.length) await this._summonPostItemDelete()
+        if(this.summonData.deletes.item.length) {
+            napolitano.log(false, `Deleting items on ${actor}...`,this.summonData.deletes.item);
+            await this._summonPostItemDelete()
+        }
         napolitano.log(false, `Summon ${actor}...`,this);
         if(this.config.killIn) this.killIn(this.summonData.summonedTokens, this.config.killIn)
     }
 
     async _summonPostItemDelete(){
         this.summonData.summonedTokens.forEach((tk) => {
-            if(tk.actor?.items?.length){
-                let items = tk.actor.items.filter(i => this.summonData.deletes.item.find(i.name))
-                items.forEach((item) => {this.deleteItem(item)})
+            if(tk.actor?.items?.size){
+                let items = tk.actor.items.filter(i => this.summonData.deletes.item.includes(i.name))
+                items.forEach((item) => {this.deleteItem({item: item})})
             }
         }) 
     }
@@ -1200,9 +1208,10 @@ export class framework {
 
     tokensInProximity(target = this.firstHitTarget, prox = 5){
         const d = this.gridSize / (this.gridDistance / prox);
-        const A = {x: target.x - d, y: target.y - d, z: target.elevation - prox};
-        const B = {x: target.x + ((this.gridSize * target.width) + d), y: target.y + ((this.gridSize * target.height) + d), z: target.elevation + prox}
-        this.proximityTokens = dangerZone.tokensInBoundary(A, B);
+        const A = {x: target.x - d, y: target.y - d};
+        const B = {x: target.x + ((this.gridSize * target.width) + d), y: target.y + ((this.gridSize * target.height) + d)}
+        const e = {bottom: target.elevation - prox, top: target.elevation + prox}
+        this.proximityTokens = dangerZone.tokensInBoundary(A, B, e);
     }
 
     async updateActor({document = this.source.actor, data = {}} = {}){
@@ -1238,7 +1247,7 @@ export class framework {
         }
         if(isDamage) {
             await this.data.setDamageRoll(roll)
-            await this.data.displayDamageRoll(true)
+            await this.data.displayDamageRolls(true)
         }
     }
 
@@ -1408,7 +1417,6 @@ export class framework {
         if(keep === 'lowest' && currentDie && currentDie.total > newRollResult.total) {
             origin._total = origin._total - (currentDie.total - newRollResult.total)
             origin.terms[currentDieIndex] = newRollResult.terms[0]
-            origin = Roll.fromTerms(origin.terms)
             await this.updateMQItemCard({roll: origin, isAttack: isAttack, isDamage: isDamage})
         }
         return {origin: origin, new: newRollResult}
@@ -1607,6 +1615,8 @@ export class workflow extends framework {
             case 'colossusSlayer': flow._colossusSlayer(); break;
             case 'combatTurnUpdateEvents': flow._combatTurnUpdateEvents(); break;
             case 'combatRoundUpdateEvents': flow._combatRoundUpdateEvents(); break;
+            case 'createEldritchCannon': flow._createEldritchCannon(); break;
+            case 'daylight': flow._daylight(); break;
             case 'darkness': flow._darkness(); break;
             case 'dawn': flow._dawn(); break;
             case 'deathWard': flow._deathWard(); break;
@@ -1633,6 +1643,7 @@ export class workflow extends framework {
             case 'hex': flow._hex(); break;
             case 'hexbladesCurse': flow._hexbladesCurse(); break;
             case 'hungryJaws': flow._hungryJaws(); break;
+            case 'infuseItem': flow._infuseItem(); break;
             case 'intrusiveEchoes': flow._intrusiveEchoes(); break;
             case 'layOnHands': flow._layOnHands(); break;
             case 'longRest': flow._longRest(); break;
@@ -1648,19 +1659,26 @@ export class workflow extends framework {
             case 'packTactics': flow._packTactics(); break;
             case 'pan': flow._pan(); break;
             case 'passWithoutTrace': flow._passWithoutTrace(); break;
+            case 'pissedOff': flow._pissedOff(); break;
             case 'polymorph': flow._polymorph(); break;
             case 'powerSurge': flow._powerSurge(); break;
             case 'produceFlame': flow._produceFlame(); break;
             case 'relentless': flow._relentless(); break;
             case 'relentlessEndurance': flow._relentlessEndurance(); break;
             case 'shortRest': flow._shortRest(); break;
+            case 'silveryBarbs': flow._silveryBarbs(); break;
             case 'sleep': flow._sleep(); break;
             case 'spareTheDying': flow._spareTheDying(); break;
             case 'spikeGrowth': flow._spikeGrowth(); break;
             case 'spiritGuardians': flow._spiritGuardians(); break;
+            case 'summonFey': flow._summonFey(); break;
+            case 'summonShadowspawn': flow._summonShadowSpawn(); break;
+            case 'summonWildfireSpirit': flow._summonWildfireSpirit(); break;
             case 'symbioticEntity': flow._symbioticEntity(); break;
+            case 'tashasHideousLaughter': flow._tashasHideousLaughter(); break;
             case 'tasteOfTheStones': flow._tasteOfTheStones(); break;
             case 'templateTargeting': flow._templateTargeting(); break;
+            case 'theRightToolForTheJob': flow._theRightToolForTheJob(); break;
             case 'toggleEffectEffects': flow._toggleEffectEffects(); break;
             case 'tokenMovement': flow._tokenMovement(); break;
             case 'torch': flow._torch(); break;
@@ -1867,8 +1885,60 @@ export class workflow extends framework {
     }
 
     async _auraOfVitality(){
-        this.item = this.source.actor.items.find(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.auraOfVitality)
-        if(this.item.id) await this.deleteItem()
+        if(this.hook === 'dnd5e.useItem'){ 
+            await this.addItem({data: {
+                "name": "Aura of Vitality Healing",
+                "type": "weapon",
+                "data": {
+                "quantity": 1,
+                "activation": {
+                    "type": "bonus",
+                    "cost": 1,
+                    "condition": ""
+                },
+                "target": {
+                    "value": 1,
+                    "width": null,
+                    "units": "",
+                    "type": "creature"
+                },
+                "range": {
+                    "value": 30,
+                    "units": "ft",
+                    "type": "feet"
+                },
+                "duration": {
+                    "units": "inst",
+                    "value": null
+                },
+                "ability": "",
+                "actionType": "heal",
+                "attackBonus": "0",
+                "damage": {
+                    "parts": [
+                    [
+                        "2d6",
+                        "healing"
+                    ]
+                    ],
+                },
+                "weaponType": "natural",
+                "proficient": true,
+                "equipped":true,
+                },
+                "img": "icons/magic/air/air-burst-spiral-pink.webp",
+                "flags": {
+                    "ddbimporter": {"ignoreItemImport": true}, 
+                    "napolitano-scripts":{'auraOfVitality': true}
+                }
+            }
+            });
+            this.generateEffect(this.source.token)
+        }
+        else {
+            this.item = this.source.actor.items.find(i => i.flags[napolitano.FLAGS.NAPOLITANO]?.auraOfVitality)
+            if(this.item.id) await this.deleteItem()
+        }        
     }
 
     async _blessedHealer(){
@@ -1998,11 +2068,30 @@ export class workflow extends framework {
     }
 
     async _cloudOfDaggers(){
-        this.setItem()
-        if(this.hasOccurredOnce()) return
-        await this.damage({targets: [this.firstHitTarget], dice: this.itemData.damageParts[0][0], type: 'slashing'})
-        this.message(`${this.firstHitTarget.name} sustains ${this.damageData.roll.result} damage from a cloud of daggers on a ${this.damageData.roll.formula} roll!`, {title: 'Cloud of Daggers'})
-        await this.setOccurredOnce() 
+        if(this.hook === 'dnd5e.useItem') {
+            this.summonData.updates = {
+                embedded: { 
+                    Item: {
+                        "Cloud of Daggers": {
+                            "system":{   
+                                "damage.parts": [
+                                    [`${4 + (this.upcastAmount*2)}d4[slashing]`, "slashing"]
+                                    ]   
+                                }
+                            }
+                    }
+                }
+            }
+            await this.summon();
+            await this.deleteTemplates();
+        } 
+        else {
+            this.setItem()
+            if(this.hasOccurredOnce()) return
+            await this.damage({targets: [this.firstHitTarget], dice: this.itemData.damageParts[0][0], type: 'slashing'})
+            this.message(`${this.firstHitTarget.name} sustains ${this.damageData.roll.result} damage from a cloud of daggers on a ${this.damageData.roll.formula} roll!`, {title: 'Cloud of Daggers'})
+            await this.setOccurredOnce() 
+        }
     }
 
     /**
@@ -2111,6 +2200,47 @@ export class workflow extends framework {
         }
     }
 
+    async _createEldritchCannon(){ //tested v10
+        const choice = await this.choose(this.config.options, 'Choose Eldritch Cannon type', 'Create Eldritch Cannon');
+        this.summonData.updates = {
+            actor: {
+                system:{
+                    attributes: {
+                        hp: {
+                            max: 5 * this.sourceData.artificerLevel,
+                            value: 5 * this.sourceData.artificerLevel
+                        }
+                    }
+                }
+            },
+            embedded: { Item: {
+                "Flamethrower": {
+                    "system.save": {ability:"dex", dc: this.sourceData.spelldc, scaling:"flat"}
+                },
+                "Force Ballista": {
+                    "system": {attackBonus: this.sourceData.spellAttack - 2}
+                },
+                "Protector": {
+                    "system":{   
+                        "damage.parts": [
+                            [`1d8 + ${this.sourceData.intelligenceMod ? this.sourceData.intelligenceMod : 1}`, "temphp"]
+                            ]
+                        }
+                    }
+            }}
+        }
+        if(choice !== "Flamethrower") {
+            this.summonData.deletes.item.push("Flamethrower")
+        }
+        if(choice !== "Protector") {
+            this.summonData.deletes.item.push("Protector")
+        }
+        if(choice !== "Force Ballista") {
+            this.summonData.deletes.item.push("Force Ballista")
+        }
+        await this.summon();
+    }
+
     async _cuttingWords(){
         let type, originalRollTotal = 0, rollSource; 
         switch(this.hook){
@@ -2180,6 +2310,10 @@ export class workflow extends framework {
         this.setItem('Dawn Effect', this.source.actor)
         if(!this.item.id) return
         await this.rollSaveDamage(this.firstTarget, {dc: this.itemData.dc, type: "con", show: true}, {dice: '4d10', type: 'radiant'}) 
+    }
+
+    async _daylight(){
+        await this.summon()
     }
 
     async _deathWard(){
@@ -2289,7 +2423,7 @@ export class workflow extends framework {
     async _eldritchBlast(){
         if(this.hook === 'midi-qol.preDamageRollComplete'){
             if(!this.hasHitTargets) return
-            if(this.hasItem({itemName: 'Eldritch Invocations: Agonizing Blast'})){
+            if(this.hasItem({itemName: 'Agonizing Blast'})){
                 await this.appendRoll(this.firstDamageRoll, false, {sign: 1, isDamage: true, mod: this.sourceData.charismaMod})
                 await this.appendMessageMQ(`+${this.sourceData.charismaMod} force damage from Agonizing Blast.`)
             }
@@ -2677,6 +2811,149 @@ export class workflow extends framework {
         }
     }
 
+    
+    async _infuseItem(){
+        if(!this.sourceData.artificerLevel){return console.log('only artificers can use the Infuse Item feature')}
+        let max = 2;
+        if(this.sourceData.artificerLevel >= 18){max=6}else if(this.sourceData.artificerLevel >= 14){max=5}else if(this.sourceData.artificerLevel >= 10){max=4}else if(this.sourceData.artificerLevel >= 6){max=3}
+        if(this.sourceData.infusions.length >= max ){
+            ui.notifications.warn(`${this.source.actor.name} already has ${this.sourceData.infusions.length} infusions which meets or exceeds the maximum allowed for their level of ${max}.`)
+            return
+        }
+        this._infuseItemPromptInfusion();
+    }
+
+    _infuseItemPromptInfusion(){
+        new Dialog({
+            title: `Infusion Item`,
+            content: `
+                <form>
+                    <div class="form-group">
+                        <label>Choose Infusion:</label>
+                        <select id="infusion-choice" name="infusion-choice">
+                        ${ Object.entries(this.artificerInfusionOptions).sort(([,a],[,b]) => a.localeCompare(b)).map(arr=> {return `\t<option value="${arr[0]}">${arr[1]}</option>`}).join('\n')}
+                        </select>
+                    </div>
+                </form>
+                `,
+            buttons: {
+                yes: {
+                    icon: "<i class='fas fa-check'></i>",
+                    label: `Begin Infusion`,
+                    callback: (html) => {
+                            const index = html.find('[name="infusion-choice"]')[0].value || '0';
+                            if(index==='0'){return this.cancelSourcePrompt()}
+                            switch(index){
+                                case 'repMag':
+                                    this._infuseItemPromptMagicalItem();
+                                    break;
+                                case 'armor':
+                                    this._infuseItemPromptItem(index, ['equipment'], 'Armor',[{"key": "system.description.value","mode": 2,"value": "<hr> <br><h2>Infusion Actions</h2><p> [[/item Armor of Magical Strength (Reaction)]] </p>","priority": 20},{"key": "name","mode": 2,"value": `: Armor of Magical Strength [Infusion]`,"priority": 20},{"key": "system.attunement","mode": 5,"value": `required`,"priority": 50},{"key": "system.properties","mode": 2,"value": `mgc`,"priority": 20}],true)
+                                    break;
+                                case 'def':
+                                    this._infuseItemPromptItem(index, ['equipment'], 'Armor or Shield',[{"key": "system.attributes.ac.bonus","mode": 2,"value": `+${this.sourceData.artificerLevel >= 10 ? 2 : 1}`,"priority": "0"}],true)
+                                    break;
+                                case 'arcana':
+                                    this._infuseItemPromptItem(index,['weapon', 'tool', 'loot', 'container', 'equipment', 'consumable'], 'Item', [{"key": "system.bonuses.rsak.attack","mode": 2,"value":  `+${this.sourceData.artificerLevel >= 10 ? 2 : 1}`,"priority": "0"}],true)
+                                    break;
+                                case 'homunculus':
+                                    this.ruleset = 'infuseItemHomunculus';
+                                    this.summon();
+                                    break;
+                                case 'repeatingShot':
+                                    this._infuseItemPromptItem(index,['weapon'], 'Item', [{"key": "system.bonuses.rwak.attack","mode": 2,"value":  `+1`,"priority": "0"},{"key": "system.bonuses.rwak.damage","mode": 2,"value":  `+1`,"priority": "0"}],true)
+                                    break;
+                                case 'weapon':
+                                    this._infuseItemPromptItem(index,['weapon'], 'Item', [{"key": "system.bonuses.weapon.attack","mode": 2,"value":  `+1`,"priority": "0"},{"key": "system.bonuses.weapon.damage","mode": 2,"value":  `+1`,"priority": "0"}],true)
+                                    break;
+                            }            
+                        }
+                    },
+                no: {
+                    icon: "<i class='fas fa-times'></i>",
+                    label: `Cancel Changes`,
+                    callback: () => this.cancelSourcePrompt()
+                    }
+            },
+            default: "yes" 
+        }).render(true);
+    }
+
+    _infuseItemPromptMagicalItem() {
+        new Dialog({
+            title: `Magical Item`,
+            content: `
+                <form>
+                    <div class="form-group">
+                        <label>Choose Infusion:</label>
+                        <select id="infusion-choice" name="infusion-choice">
+                        ${ Object.entries(this.artificerReplicateMagicItemsOptions).sort(([,a],[,b]) => a.localeCompare(b)).map(arr=> {return `\t<option value="${arr[0]}">${arr[1]}</option>`}).join('\n')}
+                        </select>
+                    </div>
+                </form>
+                `,
+            buttons: {
+                yes: {
+                    icon: "<i class='fas fa-check'></i>",
+                    label: `Replicate Magical Item`,
+                    callback: (html) => {
+                            const index = html.find('[name="infusion-choice"]')[0].value || '0';
+                            if(index==='0'){return this.cancelSourcePrompt()}
+                            this.itemAddData.name = this.artificerReplicateMagicItemsOptions[index];
+                            this._infuseItemReplicateMagicalItem()          
+                        }
+                    },
+                no: {
+                    icon: "<i class='fas fa-times'></i>",
+                    label: `Cancel Changes`,
+                    callback: () => this.cancelSourcePrompt()
+                    }
+            },
+            default: "yes" 
+        }).render(true);
+    }
+
+    async _infuseItemReplicateMagicalItem(){
+        await this.addItemName();
+        if (this.itemAddData.newItems.length) this.message(`${this.source.actor.name} taps into their artificer powers, drawing upon the Replicate Magical Item infusion and creating the ${this.itemAddData.name}! The ${this.itemAddData.name} has been added to ${this.source.actor.name}.`, {title: 'Infuse Magical Item'} )  
+    }
+
+    _infuseItemPromptItem(infusionIndex, inType, inTitle, changes, transfer){
+        const items = this.source.actor.items.filter(i => inType.indexOf(i.type)!==-1);
+        new Dialog({
+            title: `Enhance ${inTitle}`,
+            content: `
+                <form>
+                    <div class="form-group">
+                        <label>Choose ${inTitle}:</label>
+                        <select id="infusion-choice" name="infusion-choice">
+                        ${items.filter(i => i.type === inType.indexOf(i.type)!==-1).map(obj => {return `\t<option value="${obj.id}">${obj.name}</option>`}).join('\n')}
+                        </select>
+                    </div>
+                </form>
+                `,
+            buttons: {
+                yes: {
+                    icon: "<i class='fas fa-check'></i>",
+                    label: `Enhance Item`,
+                    callback: (html) => {
+                            const itemIndex = html.find('[name="infusion-choice"]')[0].value || '0';
+                            if(itemIndex==='0'){return this.cancelSourcePrompt()}
+                            const itm = items.find(i => i.id ===itemIndex);
+                            this.addActiveEffectToItem(itm, this.artificerInfusionOptions[infusionIndex],changes, {ignoreImport: true, transfer: transfer, flags: {"napolitano-scripts": {"infusion": true}}})
+                            this.message(`${this.source.actor.name} taps into their artificer powers, drawing upon the ${this.artificerInfusionOptions[infusionIndex]} infusion! ${itm.name} has been altered.` , {title: 'Enhance Item'})  
+                        }
+                    },
+                no: {
+                    icon: "<i class='fas fa-times'></i>",
+                    label: `Cancel Changes`,
+                    callback: () => this.cancelSourcePrompt()
+                    }
+            },
+            default: "yes" 
+        }).render(true);
+    } 
+
     async _interception(){
         const originalRollTotal = this.data.damageTotal  ?? 0
         if(!this.itemData.isAttack || !originalRollTotal) return 
@@ -2987,6 +3264,21 @@ export class workflow extends framework {
         return this.data.roll
     }
 
+    async _pissedOff(){
+        if(this.hasHitTargets && this.itemData.isAttack){
+            this.hitTargets.forEach((value) => { 
+            if (value.actor && this.hasItem({document: value.actor, itemName: "Blessing of Tyr"})){   
+                    const maxHP = this.getMaxHP(value.actor)  
+                    if(this.damageTotal  >= maxHP/4){
+                        this.generateEffect(value)
+                        this.addActiveEffect({effectName: 'Pissed Off', uuid: value.actor.uuid, origin: this.source.actor.uuid})
+                        this.message(`After taking damage, ${value.name} becomes pissed, unable to cope.`, {title: 'Cannot Deal With This Shit'}) //no itemcard so flavor is messaged in chat
+                    }       
+            }
+            });
+        }
+    }
+
     async _polymorph(){
         if(!this.firstTarget) return this.warn(`No tokens are targeted. Spell cast as theatre of the mind.`)
         const cr = this.getLevelElseCR(this.firstTarget)
@@ -3072,8 +3364,9 @@ export class workflow extends framework {
             this.setItem()
             const useForm = await this.yesNo();
             if (useForm) { 
-                await this.damage({targets: [this.firstHitTarget], dice: this.source.actor.system.scale.rogue['sneak-attack'].formula, type: '', critical: this.isCritical, show: false})
-                this.message(`${this.firstHitTarget.name} sustains ${this.damageData.roll.result} damage from a sneak attack on a ${this.damageData.roll.formula} roll!`, {title: 'Sneak Attack'})
+                const roll = await this.rollDice(this.source.actor.system.scale.rogue['sneak-attack'].formula, {damage: true})
+                await this.appendRoll(this.firstDamageRoll, roll, {sign: 1, isDamage: true})
+                this.appendMessageMQ(`Sneak attack adds ${roll.total} damage.`)
                 await this.setOccurredOnce() 
             }
         }
@@ -3296,6 +3589,131 @@ export class workflow extends framework {
         } 
     }
 
+    async _summonFey(){//tested v10
+        const choice = await this.choose(this.config.options, 'Choose your Fey Spirit', 'Summon Fey');
+        this.summonData.updates = {
+            actor: {
+                system:{
+                    attributes: {
+                        ac: {
+                            base: 12 + this.spellLevel,
+                            flat: 12 + this.spellLevel,
+                            value: 12 + this.spellLevel
+                        },
+                        hp: {
+                            max: 30 + (10 * (this.upcastAmount-3)),
+                            value: 30 + (10 * (this.upcastAmount-3))
+                        }
+                    },
+                    details: {
+                        cr: this.sourceData.spelldc
+                    }
+                }
+            },
+            embedded: { Item: {
+                "Multiattack": {
+                    "system.description.value": `<p>The fey spirit makes a number of attacks in one action equal to ${Math.floor(this.spellLevel/2)}, which is half this spell’s level (${this.spellLevel}) rounded down. These attacks can be of the same type or a mixed variety of its attack actions.</p>`
+                },
+                "Shortsword": {
+                    "system.damage.parts": [
+                        ["1d6[force]", "force"], 
+                        [`1d6[piercing] + @mod + ${this.spellLevel}`, "piercing"]
+                    ]
+                }
+            }}
+        };
+        if(choice !== "Fuming") {
+            this.summonData.deletes.item.push("Fuming")
+        }
+        if(choice !== "Tricksy") {
+            this.summonData.deletes.item.push("Tricksy")
+        }
+        if(choice === "Mirthful") {
+            this.summonData.updates.embedded.Item["Mirthful"] = { "system.save.dc": this.sourceData.spelldc}
+        } else {
+            this.summonData.deletes.item.push("Mirthful")
+        }
+        await this.summon()
+    }
+
+    async _summonShadowSpawn(){
+        const shadow = await this.choose(this.config.options, 'Choose your Shadow Spawn', 'Summon Shadow Spawn');
+        this.summonData.updates = {
+            actor: {
+                system:{
+                    attributes: {
+                        ac: {
+                            base: 11 + this.spellLevel,
+                            flat: 11 + this.spellLevel,
+                            value: 11 + this.spellLevel
+                        },
+                        hp: {
+                            max: 35 + (15 * (this.upcastAmount)),
+                            value: 35 + (15 * (this.upcastAmount))
+                        }
+                    },
+                    details: {
+                        cr: this.sourceData.level
+                    }
+                }
+            },
+            embedded: { Item: {
+                "Multiattack": {
+                    "system.description.value": `<p>The spirit makes a number of attacks equal to half this spell’s level (${Math.floor(this.spellLevel/2)}).</p>`
+                },
+                "Chilling Rend": {
+                    "system.attackBonus": this.sourceData.spellAttack - 3 - this.sourceData.prof, 
+                    "system.damage.parts": [
+                        [`1d12[cold] + 3 + ${this.spellLevel}`, "cold"]
+                    ]
+                },
+                "Dreadful Scream": {
+                    "system.save.dc": this.sourceData.spelldc
+                }
+            }}
+        };
+
+        if(shadow !== "Fear") {
+            this.summonData.deletes.item.push("Shadow Stealth")
+        }
+        if(shadow !== "Despair") {
+            this.summonData.deletes.item.push("Weight of Sorrow")
+        }
+        if(shadow !== "Fury") {
+            this.summonData.deletes.item.push("Terror Frenzy")
+        }
+        await this.summon()
+    }
+
+
+    async _summonWildfireSpirit(){//tested v10
+        this.summonData.updates = {
+            actor: {
+                system:{
+                    attributes: {
+                        hp: {
+                            value: 5 + (this.sourceData.druidLevel * 5),
+                            max: 5 + (this.sourceData.druidLevel * 5)
+                        }
+                    }
+                }
+            },
+            embedded: { 
+                Item: {
+                    "Flame Seed": {
+                        "system.damage.parts": [[`1d6 + ${this.sourceData.prof}`,"fire"]]
+                    },
+                    "Fiery Teleportation Damage": {
+                        "system.damage.parts": [[`1d6 + ${this.sourceData.prof}`,"fire"]],
+                        "system.save": {ability:"dex", dc: this.sourceData.spelldc, scaling:"flat"}
+                    }
+                }
+            }
+        }
+        this.summonData.noHPRoll = true
+        await this.summon({name: "Wildfire Spirit"});
+    }
+
     async _symbioticEntity(){
         const tempHp = 4 * this.sourceData.druidLevel
         this.generateEffect(this.source.token)
@@ -3303,6 +3721,60 @@ export class workflow extends framework {
             await this.source.actor.update({data:{attributes: {hp: {temp: tempHp}}}})
             this.message(`${this.name} gains ${tempHp} temp HP`,{title: 'Symbiotic Entity'})
         }
+    }
+
+    async _tashasHideousLaughter(){
+        if(this.damageTotal && this.hasTargets){
+            this.targets.forEach((target) => {      
+                if(this.hasEffect(target, "Tasha's Hideous Laughter - Incapacitated")) {
+                    const effect = this.getEffect(target, "Tasha's Hideous Laughter - Incapacitated")
+                    let item, dc;
+                    if(effect) item = fromUuidSync(effect.origin)
+                    if(item) dc = item?.system?.save?.dc
+                    this.rollSave(target, {advantage: true, chatMessage: true, dc: dc, type: 'wis', source: "Tasha's Hideous Laughter"})
+                }
+            }); 
+        } 
+    }
+
+    async _theRightToolForTheJob(){//tested v10
+        if(this.sourceData.artificerTools.length >= 1 ){
+            ui.notifications.warn(`${this.source.actor.name} already has ${this.sourceData.artificerTools.length} magically created tool. They must destroy this tool in order to create another.`)
+            return;
+        }
+        new Dialog({
+            title: `The Right Tool For the Job`,
+            content: `
+                <form>
+                    <div class="form-group">
+                        <label>Choose Tool:</label>
+                        <select id="tool-choice" name="tool-choice">
+                        ${ Object.entries(TOOLS).sort(([,a],[,b]) => a.localeCompare(b)).map(arr=> {return `\t<option value="${arr[0]}">${arr[1]}</option>`}).join('\n')}
+                        </select>
+                    </div>
+                </form>
+                `,
+            buttons: {
+                yes: {
+                    icon: "<i class='fas fa-check'></i>",
+                    label: `Create Tool`,
+                    callback: async (html) => {
+                            const ix = html.find('[name="tool-choice"]')[0].value || '0';
+                            if(ix==='0'){return this.cancelSourcePrompt()}
+                            this.itemAddData.name = TOOLS[ix];
+                            await this.addItemName()      
+                            await this.setFlag(this.source.actor.items.find(i => i.name === this.itemAddData.name), {'rightToolForTheJob': true})
+                            this.message(`${this.source.actor.name} taps into their artificer powers, magically creating a set of ${this.itemAddData.name}! ${this.itemAddData.name} have been added to ${this.source.actor.name}.`, {title: 'The Right Tool for the Job'})
+                        }
+                    },
+                no: {
+                    icon: "<i class='fas fa-times'></i>",
+                    label: `Cancel Changes`,
+                    callback: () => this.cancelSourcePrompt()
+                    }
+            },
+            default: "yes" 
+        }).render(true);
     }
 
     async _totemSpiritBear(){

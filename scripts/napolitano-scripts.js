@@ -29,7 +29,7 @@ export class napolitano {
       const scene = token.parent;
       ui.notifications?.info('Choose location to place token on the scene');
       const xy = await warpgate.crosshairs.show({size: token.width})
-      const tokenObj = duplicate(token);
+      const tokenObj = foundry.utils.duplicate(token);
       Object.assign(tokenObj, {x: xy.x, y: xy.y})
       const tokens = await canvas.scene.createEmbeddedDocuments('Token', [tokenObj])
       const newToken = canvas.tokens.get(tokens[0].id);
