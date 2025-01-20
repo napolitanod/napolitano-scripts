@@ -237,7 +237,8 @@ Hooks.once("midi-qol.midiReady", () => {
         if(game.settings.get("napolitano-scripts", "rayOfEnfeeblement")) results.push(workflow.playAsync('rayOfEnfeeblement', data, {hook: hook}))
         if(game.settings.get("napolitano-scripts", "cutting-words")) results.push(workflow.playAsync('cuttingWords', data, {hook: hook}))
         if(game.settings.get("napolitano-scripts", "parry")) results.push(workflow.playAsync('parry', data, {hook: hook})) 
-        if(game.settings.get("napolitano-scripts", "interception")) results.push(workflow.playAsync('interception', data, {hook: hook}))         
+        if(game.settings.get("napolitano-scripts", "interception")) results.push(workflow.playAsync('interception', data, {hook: hook})) 
+        if(game.settings.get("napolitano-scripts", "sneak-attack")) results.push(workflow.playAsync('sneakAttack', data, {hook: hook}))           
         
         await Promise.all(results)
     });
@@ -271,7 +272,12 @@ Hooks.once("midi-qol.midiReady", () => {
         if(game.settings.get("napolitano-scripts", "disarming-attack")){
             workflow.play('disarmingAttack', data, {hook: hook}); 
         }
-        if(game.settings.get("napolitano-scripts", "sneak-attack")) results.push(workflow.playAsync('sneakAttack', data, {hook: hook}))   
+        if(game.settings.get("napolitano-scripts", "tashas-hideous-laughter")){
+            workflow.play('tashasHideousLaughter', data, {hook: hook}); 
+        }
+        if(game.settings.get("napolitano-scripts", "pissed-off")){
+            workflow.play('pissedOff', data, {hook: hook})
+        }
         switch(data.item?.name){
             case 'Hungry Jaws': if(game.settings.get("napolitano-scripts", "hungry-jaws")) workflow.play('hungryJaws', data, {hook: hook}); break;
             case 'Magic Missile': if(data.options?.notCast) results.push(workflow.playAsync('magicMissile', data, {hook: hook})); break;
@@ -395,6 +401,7 @@ HOOKIDS['preUpdateToken'] = Hooks.on("preUpdateToken", async (token, update, opt
 
 HOOKIDS['updateToken'] = Hooks.on("updateToken", async (token, update, options, id) => {
     if (game.user.isGM && ("x" in update || "y" in update || "elevation" in update) && options[`${napolitano.FLAGS.NAPOLITANO}`]) {
+        await CanvasAnimation.getAnimation(token?.object?.animationName)?.promise 
         workflow.play('tokenMovement', token, {hook: 'updateToken', moveData: options[`${napolitano.FLAGS.NAPOLITANO}`], update: update});
         workflow.play('boomingBlade', token, {hook: 'updateToken', moveData: options[`${napolitano.FLAGS.NAPOLITANO}`], update: update})
     }

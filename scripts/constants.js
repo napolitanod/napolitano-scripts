@@ -93,6 +93,7 @@ export const TEMPLATEMODIFICATION = [
 
 export const PCS = {
     chenju: 'Chenju (Narbirt)', 
+    nesbit: 'Nesbit Swampton', 
     wubbub: 'Wubbub'
 }
 
@@ -607,6 +608,10 @@ export const NAPOLITANOCONFIG = {
         name: "Pass without Trace",
         effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuff01_03_Regular_Grey_400x400.webm', scale: 1}}
     },
+    pissedOff: {
+        name: "Pissed Off",
+        effects: {pre: {file: 'modules/jb2a_patreon/Library/Generic/Item/SphereOfAnnihilation_01_Dark_Red_600x600.webm', scale: 1}}
+    },
     polymorph: {
         name: "Polymorpth",
         prompt: "Choose a beast to polymorph the target into."
@@ -722,6 +727,11 @@ export const NAPOLITANOCONFIG = {
         options: [`Fury`, `Despair`,`Fear`],
         killIn: {minutes: 60},
         name: "Shadow Spirit"
+    },
+    summonWildfireSpirit: {
+        effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuffRing02_01_Regular_White_400x400.webm', scale: 1.5}},
+        sounds: {pre: {file: 'modules/soundfxlibrary/Combat/Single/Spell%20Whoosh/spell-whoosh-2.mp3'}},
+        name: "Summon Wildfire Spirit"
     },
     symbioticEntity: {
         name: "Symbiotic Entity",
@@ -846,7 +856,11 @@ const LINKDATACATEGORIES = {
 
 export const HOOKEDUSEITEMITEMS = {
     'Accursed Specter': 'accursedSpecter',
+    'Aura of Vitality': 'auraOfVitality',
     'Booming Blade': 'boomingBlade',
+    'Cloud of Daggers': 'cloudOfDaggers',
+    'Create Eldritch Cannon': 'createEldritchCannon',
+    'Daylight': 'daylight',
     'Divine Smite': 'divineSmite',
     'Feather of Diatryma Summoning': 'featherOfDiatrymaSummoning',
     'Figurine of Wondrous Power (Golden Lions)': 'figurineOfWonderousPowerLions',
@@ -855,12 +869,17 @@ export const HOOKEDUSEITEMITEMS = {
     'Grease': 'grease',
     'Halo of Spores': 'haloOfSpores',
     'Hand Grenade': 'handGrenade',
+    'Infuse Item': 'infuseItem',
     "Maximilian's Earthen Grasp": 'maximiliansEarthenGrasp',
     'Polymorph': 'polymorph',
     'Silvery Barbs': 'silveryBarbs',
     'Spare the Dying': 'spareTheDying',
     'Spike Growth': 'spikeGrowth',
+    'Summon Fey': 'summonFey',
+    'Summon Shadow Spawn': 'summonShadowSpawn',
+    'Summon Wildfire Spirit': 'summonWildfireSpirit',
     'Symbiotic Entity': 'symbioticEntity',
+    'The Right Tool for the Job': 'theRightToolForTheJob',
     "Varalla's Claws of Darkness": 'varallasClawsOfDarkness'
 }
 
@@ -909,6 +928,7 @@ export const CONFIGS = [
     {id:"necrotic-shroud", name:"Necrotic Shroud"},
     {id:"pack-tactics", name:"Pack Tactics"},
     {id:"parry", name:"Parry"},
+    {id:"pissed-off", name:"Pissed Off"},
     {id:"potent-spellcasting", name:"Potent Spellcasting"},
     {id:"precision-attack", name:"Precision Attack"},
     {id:"radiant-soul", name:"Radiant Soul"},
@@ -918,6 +938,7 @@ export const CONFIGS = [
     {id:"shield", name:"Shield (spell)"},
     {id:"silvery-barbs", name:"Silvery Barbs"},
     {id:"sneak-attack", name:"Sneak Attack"},
+    {id:"tashas-hideous-laughter", name: "Tasha's Hideous Laughter"},
     {id:"taste-of-the-stones", name:"Taste of the Stones"},
     {id:"voices-from-beyond", name:"Voices from Beyond"},
     {id:"warding-flare", name:"Warding Flare"},
