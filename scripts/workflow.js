@@ -1535,8 +1535,8 @@ export class workflow extends framework {
                     this.source.token = this.scene.tokens.find(t => t.actor?.id === this.source.actor.id)
                     this.roll = this.data.roll;
                     break;
-            case 'dnd5e.itemUsageConsumption':
-            case 'dnd5e.useItem':
+            case 'dnd5e.activityConsumption':
+            case 'dnd5e.postUseActivity':
                     this.targets = this.convertToTokenDocument(game.user.targets);
                     this.item = this.data.item;
                     this.source.actor = this.item.actor
@@ -1598,7 +1598,6 @@ export class workflow extends framework {
         switch(ruleset){
             case 'accursedSpecter': flow._accursedSpecter(); break;
             case 'ancestralProtectors': flow._ancestralProtectors(); break;
-            case 'animateDead': flow._animateDead(); break;
             case 'armorOfAgathys': flow._armorOfAgathys(); break;
             case 'assassinate': flow._assassinate(); break;
             case 'auraOfVitality': flow._auraOfVitality(); break;
@@ -1743,18 +1742,6 @@ export class workflow extends framework {
         }
     } 
 
-    async _animateDead(){
-        const max = (1 + (2 * this.upcastAmount))
-        for(let i = 0; i < 1 + (2 * this.upcastAmount); i++){
-            let decision = await this.yesNo({title: 'Use Spell to Animate?', prompt: `You have <span class="napolitano-label">${max - i}</span> Animate Dead uses. Would you like to use ${i ? 'another ' : ''}one to animate dead?`, img: this.getItem()?.img})
-            if(!decision) return this.message( `${this.name} chooses to not animate ${i ? 'any more ' : ''}dead and can reassert control over ${max - i} undead.`, 'Animate Dead');
-            let choice = await this.choose(this.config.options, this.config.prompt, this.config.name)
-            let undead = choice === 'Bones' ? 'Skeleton' : 'Zombie'
-            await this.summon({name: undead}) 
-            this.message( `${this.name} animates ${choice === 'Bones' ? 'a pile of bones' : 'a corpse'} and a ${undead} rises!`, 'Animate Dead')
-        }
-    }
-
     /**
      * Tested: v10
      * Adds the Hex Warrior Weapon setting from the character
@@ -1885,7 +1872,7 @@ export class workflow extends framework {
     }
 
     async _auraOfVitality(){
-        if(this.hook === 'dnd5e.useItem'){ 
+        if(this.hook === 'dnd5e.postUseActivity'){ 
             await this.addItem({data: {
                 "name": "Aura of Vitality Healing",
                 "type": "weapon",
@@ -1975,7 +1962,7 @@ export class workflow extends framework {
     }
 
     async _boomingBlade(){
-        if(this.hook === 'dnd5e.useItem'){ 
+        if(this.hook === 'dnd5e.postUseActivity'){ 
             const weapons = this.source.actor.items.filter(i => i.type === 'weapon' && i.system.actionType === 'mwak')
             const choice = await this.choose(weapons.map(w => [w.id, w.name]), 'Choose the weapon to make the booming blade attack with.', `${this.name} choose weapon`)
             const item = weapons.find(w => w.id === choice)
@@ -2068,7 +2055,7 @@ export class workflow extends framework {
     }
 
     async _cloudOfDaggers(){
-        if(this.hook === 'dnd5e.useItem') {
+        if(this.hook === 'dnd5e.postUseActivity') {
             this.summonData.updates = {
                 embedded: { 
                     Item: {
@@ -2551,7 +2538,7 @@ export class workflow extends framework {
     }
 
     async _fogCloud(){
-        if(this.hook === 'dnd5e.useItem') {
+        if(this.hook === 'dnd5e.postUseActivity') {
             this.summonData.updates = {
                 token: { 
                     height: 8 * this.spellLevel,
@@ -2605,7 +2592,7 @@ export class workflow extends framework {
     }
 
     async _grease(){
-        if(this.hook === 'dnd5e.useItem'){
+        if(this.hook === 'dnd5e.postUseActivity'){
             this.summonData.updates = {
                 embedded: { 
                     Item: {
@@ -3464,7 +3451,7 @@ export class workflow extends framework {
     async _silveryBarbs(){
         let type, originalRollTotal, rollSource, success = true
         switch(this.hook){
-            case 'dnd5e.useItem':
+            case 'dnd5e.postUseActivity':
                 const response = await this.promptTarget({title: 'Silvery Barbs Advantage', origin: this.source.actor.uuid, owner: this.sourceData.owner, event: 'Grant Silvery Barbs Advantage', prompt: `Select a target to grant advantage to on their next attack roll, saving throw or ability check.`})
                 const target = this.scene.tokens.find(t => t.id === response.targets[0])
                 if(target) this.addActiveEffect({effectName: 'Silvery Barbs Advantage', origin: response.origin, uuid: target.actor.uuid})
@@ -3560,7 +3547,7 @@ export class workflow extends framework {
     }
 
     async _spikeGrowth(){
-        if(this.hook === 'dnd5e.useItem') {
+        if(this.hook === 'dnd5e.postUseActivity') {
             this.summonData.noHPRoll = true
             await this.summon();
         } else {

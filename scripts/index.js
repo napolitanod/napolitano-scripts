@@ -111,15 +111,15 @@ Hooks.once('ready', async function() {
         }
     }); 
 
-    HOOKIDS['dnd5e.useItem'] = Hooks.on("dnd5e.useItem", async (item, config, options, template) => {
-        const hook = "dnd5e.useItem";
+    HOOKIDS['dnd5e.postUseActivity'] = Hooks.on("dnd5e.postUseActivity", async (item, config, options, template) => {
+        const hook = "dnd5e.postUseActivity";
         const hooked = HOOKEDUSEITEMITEMS[item.name]
         if(hooked) workflow.play(hooked, {item: item, config: config, options: options, template: template}, {hook: hook});
         if(['Counterspell', 'Dispell Magic'].includes(item.name)) workflow.play('powerSurge', {item: item}, {hook: hook})    
     });
 
-    HOOKIDS['dnd5e.itemUsageConsumption'] = Hooks.on("dnd5e.itemUsageConsumption", async (item, config, options, usage) => {
-        const hook = "dnd5e.itemUsageConsumption";
+    HOOKIDS['dnd5e.activityConsumption'] = Hooks.on("dnd5e.activityConsumption", async (item, config, options, usage) => {
+        const hook = "dnd5e.activityConsumption";
         const hooked = HOOKEDITEMUSAGECONSUMPTIONITEMS[item.name]
         if(hooked) workflow.play(hooked, {item: item, config: config, options: options, usage:usage}, {hook: hook})
     });
@@ -316,7 +316,6 @@ Hooks.once("midi-qol.midiReady", () => {
             workflow.play('blessedHealer', data, {hook: hook}); 
         }
         switch(data.item?.name){
-             case 'Animate Dead': workflow.play('animateDead', data, {hook: hook}); break;
              //case 'Halo of Spores': workflow.play('haloOfSpores', data, {hook: hook}); break;
              case 'Fanged Bite': workflow.play('fangedBite', data, {hook: hook}); break;
              case "Melf's Acid Arrow": workflow.play('melfsAcidArrow', data, {hook: hook}); break;

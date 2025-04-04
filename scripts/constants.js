@@ -154,13 +154,6 @@ export const NAPOLITANOCONFIG = {
     ancestralProtectors: {
         name: "Ancestral Protectors"
     },
-    animateDead: {
-        name: "Animate Dead",
-        effects:{pre: {file: 'modules/jb2a_patreon/Library/Generic/Smoke/SmokePuffRing02_01_Dark_Black_400x400.webm', scale: 1.5}},
-        sounds: {pre: {file:'modules/soundfxlibrary/Combat/Single/Spell%20Impact/spell-impact-2.mp3'}},
-        options: [`Bones`, 'Corpse'],
-        prompt: `Are you animating Bones or a Corpse?`
-    },
     arcaneFirearm: {
         name: "Arcane Firearm"
     },
